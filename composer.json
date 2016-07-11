@@ -1,0 +1,26 @@
+{
+    "name": "fiendlyit/search",
+    "version": "0.1",
+    "type": "pagekit-extension",
+    "title": "Search",
+    "description": "Add a configurable search form to your site.",
+    "license": "MIT",
+    "authors": [
+        {
+			"name": "Friendly-IT",
+            "email": "info@friendly-it.ru",
+            "homepage": "http://friendly-it.ru/"
+        }
+    ],
+    "extra": {
+        "image": "assets/svg/extension.svg",
+		"icon": "icon.svg",
+        "scripts": "scripts.php"
+    },
+    "archive": {
+        "exclude": [
+            "node_modules", 
+            "!/app"
+        ]
+    }
+}

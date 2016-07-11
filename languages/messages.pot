@@ -1,0 +1,218 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: Pagekit 1.0.5 (friendlyit/search, messages)\n"
+"POT-Creation-Date: 2016-07-09 23:23+0000\n"
+"PO-Revision-Date: YYYY-mm-DD HH:MM+ZZZZ\n"
+"Last-Translator: NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+msgid "Title"
+msgstr ""
+
+msgid "Title cannot be blank."
+msgstr ""
+
+msgid "Number of search results"
+msgstr ""
+
+msgid "Min. input length before triggering autocomplete"
+msgstr ""
+
+msgid "Length search result in characters"
+msgstr ""
+
+msgid "Search Settings"
+msgstr ""
+
+msgid "Search term must be a minimum of %1$s characters and a maximum of %2$s characters."
+msgstr ""
+
+msgid "One or more common words were ignored in the search."
+msgstr ""
+
+msgid "All words"
+msgstr ""
+
+msgid "Any words"
+msgstr ""
+
+msgid "Exact Phrase"
+msgstr ""
+
+msgid "Newest First"
+msgstr ""
+
+msgid "Oldest First"
+msgstr ""
+
+msgid "Most Popular"
+msgstr ""
+
+msgid "Alphabetical"
+msgstr ""
+
+msgid "Category"
+msgstr ""
+
+msgid "Search"
+msgstr ""
+
+msgid "Invalid token. Please try again."
+msgstr ""
+
+msgid "Page %s of %s"
+msgstr ""
+
+msgid "Results %s - %s of %s"
+msgstr ""
+
+msgid "No record found"
+msgstr ""
+
+msgid "ALL"
+msgstr ""
+
+msgid "Next"
+msgstr ""
+
+msgid "Prev"
+msgstr ""
+
+msgid "Start"
+msgstr ""
+
+msgid "End"
+msgstr ""
+
+msgid "All"
+msgstr ""
+
+msgid "Invalid path."
+msgstr ""
+
+msgid "Total: Nothing found."
+msgstr ""
+
+msgid "<strong>Total: %s result found.</strong>"
+msgstr ""
+
+msgid "<strong>Total: %s result founds.</strong>"
+msgstr ""
+
+msgid "<strong>Total: %s results found.</strong>"
+msgstr ""
+
+msgid "<strong>Total: One result found.</strong>"
+msgstr ""
+
+msgid "Articles"
+msgstr ""
+
+msgid "Blog"
+msgstr ""
+
+msgid "Blog comments"
+msgstr ""
+
+msgid "Pages"
+msgstr ""
+
+msgid "Uncategorised"
+msgstr ""
+
+msgid "General"
+msgstr ""
+
+msgid "Additional"
+msgstr ""
+
+msgid "Save"
+msgstr ""
+
+msgid "Default name"
+msgstr ""
+
+msgid "Limit search result"
+msgstr ""
+
+msgid "Unlimit"
+msgstr ""
+
+msgid "Result per page"
+msgstr ""
+
+msgid "Default Search settings"
+msgstr ""
+
+msgid "Use areas of search"
+msgstr ""
+
+msgid "Show pages counter"
+msgstr ""
+
+msgid "Show Posted In"
+msgstr ""
+
+msgid "Consider Date"
+msgstr ""
+
+msgid "Default layout settings"
+msgstr ""
+
+msgid "Show Title"
+msgstr ""
+
+msgid "Enable Markdown"
+msgstr ""
+
+msgid "Require e-mail."
+msgstr ""
+
+msgid "Close comments on articles older than"
+msgstr ""
+
+msgid "days."
+msgstr ""
+
+msgid "Search Keyword: "
+msgstr ""
+
+msgid "Search..."
+msgstr ""
+
+msgid " Search"
+msgstr ""
+
+msgid "Search for:"
+msgstr ""
+
+msgid "Ordering:"
+msgstr ""
+
+msgid "Search Only:"
+msgstr ""
+
+msgid "Display #"
+msgstr ""
+
+msgid "Posted in: "
+msgstr ""
+
+msgid "Created on:  %s"
+msgstr ""
+
+msgid "Search Results"
+msgstr ""
+
+msgid "More Results"
+msgstr ""
+
+msgid "No results found"
+msgstr ""
+
+msgid "search..."
+msgstr ""
+
