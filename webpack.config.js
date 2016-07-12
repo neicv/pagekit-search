@@ -10,6 +10,7 @@ module.exports = [
             filename: "./app/bundle/[name].js"
         },
 		externals: {
+			"jquery": "jQuery",
             'uikit': 'UIkit',
             'vue': 'Vue'
         },     
