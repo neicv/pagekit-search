@@ -10,8 +10,8 @@
 
 namespace Friendlyit\Search\Helpers;
 
-use Pagekit\Component\Config\Config; 
 use Friendlyit\Search\Helpers\EXTransliterate;
+use Friendlyit\Search\Helpers\EXDefaultLocalise;
 use Pagekit\Application as App; 
 
 /**
@@ -52,9 +52,13 @@ class EXSearchHelper
 		if (!$dir = $this->getPath()) {
 			return $this->error(__('Invalid path.'));
 		}
-		$dir = $this->getPath();
-		//$path = $_SERVER['DOCUMENT_ROOT'] .'search:filters/'; search:
-		$path = $this->getPath().'/packages/friendlyit/search/filters/';
+		
+		if (!$dir = App::module('search')->get('path')) {
+		return $this->error(__('Invalid path.'));
+		}
+
+		$path = $dir.'/filters/';
+		
 
 		
 		//$external_lang = true;
@@ -75,8 +79,8 @@ class EXSearchHelper
 					}
 					//else $external_lang = false;
 					else 	{
-							$lang ='Friendlyit\Search\Helpers\EXDefault';
-							
+							$lang ='EXDefault';
+							require_once $dir.'/src/Helpers/EXDefaultLocalise.php';
 							}
 				}
 			// External Language alredy loaded in index.php autoload src = >

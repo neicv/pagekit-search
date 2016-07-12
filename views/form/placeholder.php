@@ -8,7 +8,7 @@
 
 <div class="tm-block-main uk-block-default tm-padding-around" id="tm-main">
 	<div class="tm-middle uk-grid" data-uk-grid-margin="" data-uk-grid-match="">
-		<div class="tm-main uk-width-medium-1-1"><main class="tm-content">
+		<div class="tm-main tm-content uk-width-medium-1-1">
 			<div id="system-message-container"></div>
 			
 			<form id="search-form" class="uk-form uk-margin-bottom" action="<?= $view->url('@search/submit') ?>" method="post">
@@ -149,7 +149,6 @@
 				
 			<?php endif; ?>
 			
-			</div>
-		</div>	
-	</div>
+		</div>
+	</div>	
 </div>

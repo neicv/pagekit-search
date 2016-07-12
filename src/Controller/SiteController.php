@@ -11,7 +11,6 @@ namespace Friendlyit\Search\Controller;
 use Pagekit\Application as App;
 use Friendlyit\Search\Helpers\EXFilterInput;
 use Friendlyit\Search\Helpers\EXSearchHelper;
-use Friendlyit\Search\Helpers\EXDefaultLocalise;
 use Friendlyit\Search\Helpers\EXPagination;
 use Friendlyit\Search\SearchExtension;
 use Friendlyit\Search\Entity\Search;

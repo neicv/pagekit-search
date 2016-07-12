@@ -10,6 +10,9 @@ It contains "Search Widget"
 
 Install manualy (Alpha release)
 
+extract package to:
+.\packages\friendlyit\search\
+
 ## Usage
 If you wanna make "search page" - go to `Site -> Add new Page -> Link` in the Pagekit admin area.
 And make link to "/search".
