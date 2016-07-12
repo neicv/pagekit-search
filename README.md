@@ -4,14 +4,14 @@ Friendly IT Search for Pagekit extension enables you to make search request on "
 
 It contains "Search Widget"
 
-![image](http://search.friendly-it.ru/storage/searchscrenshot.jpg)
+![image](http://search.friendly-it.ru/storage/searchscreenshot.jpg)
 
 ## Installation
 
 Install manualy (Alpha release)
 
 ## Usage
-If u wanna make "search page" - go to `Site -> Add new Page -> Link` in the Pagekit admin area.
+If you wanna make "search page" - go to `Site -> Add new Page -> Link` in the Pagekit admin area.
 And make link to "/search".
 
 Or / And u can use "Search widget" 
