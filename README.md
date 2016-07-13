@@ -8,8 +8,8 @@ It contains "Search Widget"
 
 ## Installation
 
-Install manualy (Alpha release)
-
+Install manualy (Alpha release):
+Download [package](http://search.friendly-it.ru/releases/download/search/search-0.1.1.zip) and
 extract package to:
 .\packages\friendlyit\search\
 
