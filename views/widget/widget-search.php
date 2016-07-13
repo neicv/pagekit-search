@@ -1,4 +1,4 @@
-<?php $view->style('search', 'search:assets/css/search.css') ?>
+<?php $view->style('search', 'friendlyit/search:assets/css/search.css') ?>
 <?php $view->script('autocomplete', 'app/assets/uikit/js/components/autocomplete.min.js', 'js') ?>
 <?php $view->script('search', 'app/assets/uikit/js/components/search.min.js', 'js') ?>
 <div 

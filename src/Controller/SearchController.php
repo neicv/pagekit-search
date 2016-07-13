@@ -10,11 +10,10 @@ use Pagekit\Application as App;
 class SearchController 
 {
     /**
-     * -Response("search://views/admin/index.razr")
+     * 
      */
     public function indexAction()
     {
-        //return ['head.title' => __('Search')];
 		return "Backend View";
     }
 	
@@ -26,10 +25,10 @@ class SearchController
         return [
             '$view' => [
                 'title' => __('Search Settings'),
-                'name'  => 'search:views/admin/settings.php'
+                'name'  => 'friendlyit/search:views/admin/settings.php'
             ],
             '$data' => [
-                'config' => App::module('search')->config()
+                'config' => App::module('friendlyit/search')->config()
             ]
         ];
     }

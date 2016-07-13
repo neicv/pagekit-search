@@ -22,7 +22,7 @@ return [
     'uninstall' => function ($app) {
 
         // remove the config
-        $app['config']->remove('search');
+        $app['config']->remove('friendlyit/search');
 
     },
 

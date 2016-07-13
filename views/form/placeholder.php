@@ -1,4 +1,4 @@
-<?php $view->script('search-submit', 'search:app/bundle/search.js', 'vue') ?>
+<?php $view->script('search-submit', 'friendlyit/search:app/bundle/search.js', 'vue') ?>
 	
 <?php if($params['show_title']): ?>
 	<h2 class="tm-article-subtitle uk-text-success">

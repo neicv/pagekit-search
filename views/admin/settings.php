@@ -1,4 +1,4 @@
-<?php $view->script('settings', 'search:app/bundle/settings.js', ['vue', 'jquery']) ?>
+<?php $view->script('settings', 'friendlyit/search:app/bundle/settings.js', ['vue', 'jquery']) ?>
 
 <div id="settings" class="uk-form uk-form-horizontal" v-cloak>
 

@@ -84,7 +84,7 @@ class SiteController
     public function __construct()
     {
 		
-        $this->extension = App::module('search');
+        $this->extension = App::module('friendlyit/search');
 	   
     }
 
@@ -492,7 +492,7 @@ class SiteController
 		return [
 			'$view' => [
 				'title'		 => __('Search'),
-				'name' => 'search:views/form/placeholder.php',
+				'name' => 'friendlyit/search:views/form/placeholder.php',
 				],
 			'posts'				=> [], 
 			'searchword'		=>  $searchword,

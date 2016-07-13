@@ -36,7 +36,7 @@
   'Pages' => 'Страницы',
   'Uncategorised' => 'Без категории',
   'General' => 'Общие',
-  'Additional' => 'Дополительные',
+  'Additional' => 'Дополнительные',
   'Save' => 'Сохранить',
   'Default name' => 'Имя по умолчанию',
   'Limit search result' => 'Ограничение результатов поиска',

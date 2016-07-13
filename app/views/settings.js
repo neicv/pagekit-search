@@ -9,7 +9,7 @@ module.exports = {
     methods: {
 
         save: function () {
-            this.$http.post('admin/system/settings/config', {name: 'search', config: this.config}).then(function () {
+            this.$http.post('admin/system/settings/config', {name: 'friendlyit/search', config: this.config}).then(function () {
                         this.$notify('Settings saved.');
                     }, function (data) {
                         this.$notify(data, 'danger');

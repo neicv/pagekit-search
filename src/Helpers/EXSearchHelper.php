@@ -53,7 +53,7 @@ class EXSearchHelper
 			return $this->error(__('Invalid path.'));
 		}
 		
-		if (!$dir = App::module('search')->get('path')) {
+		if (!$dir = App::module('friendlyit/search')->get('path')) {
 		return $this->error(__('Invalid path.'));
 		}
 

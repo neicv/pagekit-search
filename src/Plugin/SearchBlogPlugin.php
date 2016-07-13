@@ -98,7 +98,7 @@ class SearchBlogPlugin implements EventSubscriberInterface
 	{ 
 		if (!$blog = App::module('blog')) {return array();}
 		
-		$params = App::module('search')->config('defaults');
+		$params = App::module('friendlyit/search')->config('defaults');
 		$limit 	= (!$params['limit_search_result']) ? self::PAGES_PER_PAGE : $params['limit_search_result'];
 		
 		$parameters = $event->getParameters();

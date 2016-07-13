@@ -6,7 +6,7 @@ use Friendlyit\Search\Plugin\SearchBlogPlugin;
 
 return [
 
-    'name' => 'search',
+    'name' => 'friendlyit/search',
 
     'type' => 'extension',
 
@@ -80,7 +80,7 @@ return [
 
         'search' => [
             'label'  => 'Search',
-            'icon'   => 'search:icon.svg',
+            'icon'   => 'friendlyit/search:icon.svg',
             'url'    => '@search/admin',
             'active' => '@search*',
             //'access' => 'search: see search'
@@ -88,7 +88,7 @@ return [
 		'search: panel' => [
             'parent' => 'search',
             'label' => 'Search',
-            'icon' => 'search:icon.svg',
+            'icon' => 'friendlyit/search:icon.svg',
             'url' => '@search/admin',
             'access' => 'search: manage search'
         ],
