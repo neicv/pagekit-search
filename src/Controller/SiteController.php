@@ -203,6 +203,8 @@ class SiteController
 		$upper_limit = $EXSearchHelper::getUpperLimitSearchWord();
 		$lower_limit = $EXSearchHelper::getLowerLimitSearchWord();
 		
+		$upper_limit = (int)((!$upper_limit) ? 200 : $upper_limit);
+		
 		if ($EXSearchHelper::limitSearchWord($searchword))
 			{
 				$s = __('Search term must be a minimum of %1$s characters and a maximum of %2$s characters.');
@@ -503,6 +505,7 @@ class SiteController
 			'searchareas'		=>	$areas,
 			'limit'				=>	$limit,
 			'pagination'   		=>  &$pagination,
+			'upper_limit'		=>  $upper_limit,
 			'params'			=>  $params
 			];
 			

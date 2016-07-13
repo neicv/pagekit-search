@@ -18,7 +18,7 @@
 				<FIELDSET>
 					<div class="uk-form-row"><label for="search_searchword"><?= __('Search Keyword: ')?></label>
 					
-					<input class="uk-form-small" type="text" name="search[searchword]" v-model="search.searchword" placeholder="<?= __('Search...')?>" size="30" maxlength="<?= $upper_limit; ?>" value="<?= $this->escape($origkeyword); ?>" class="inputbox" />
+					<input class="inputbox" type="text" name="search[searchword]" v-model="search.searchword" placeholder="<?= __('Search...')?>" size="30" maxlength="<?= $upper_limit; ?>" value="<?= $this->escape($origkeyword); ?>" >
 					
 					<button title="<?= __(' Search')?>" class="uk-button uk-button-primary" onclick="this.form.submit()"><i class="uk-icon-search"></i><?= __(' Search')?></button>
 					
