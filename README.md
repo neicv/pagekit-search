@@ -8,10 +8,11 @@ It contains "Search Widget"
 
 ## Installation
 
-Install manualy (Alpha release): 
+Please install manualy Search via the built-in Extensions Manager in your Pagekit Installation. 
+
 Download [package](http://search.friendly-it.ru/releases/download/search/search-0.1.1.zip) and
-extract to:
-.\packages\friendlyit\search\
+go to `Site -> System -> Extension -> Upload` 
+select package file.
 
 ## Usage
 If you wanna make "search page" - go to `Site -> Add new Page -> Link` in the Pagekit admin area.
