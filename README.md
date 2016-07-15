@@ -8,7 +8,7 @@ It contains "Search Widget"
 
 ## Installation
 
-Please install manualy Search via the built-in Extensions Manager in your Pagekit Installation. 
+Please install manually Search via the built-in Extensions Manager in your Pagekit Installation. 
 
 Download [package](http://search.friendly-it.ru/releases/download/search/search-0.1.2.zip) and
 go to `Site -> System -> Extension -> Upload` 
