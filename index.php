@@ -19,19 +19,13 @@ return [
 	'nodes' => [
 
         'search' => [
-
-
-            'name' => '@search',
+			'name' => '@search',
             'label' => 'Search',
             'controller' => 'Friendlyit\\Search\\Controller\\SiteController',
-
             'protected' => true
-
         ]
-
     ],
-	
-	
+
 	'routes' => [
 
         '/search' => [
@@ -49,14 +43,11 @@ return [
     ],
 	
 	
-    'resources' => [
+	'resources' => [
 
-        'export' => [
-            'view' => 'views',
-            'asset' => 'assets'
-        ]
+		'friendlyit/search:' => ''
 
-    ],
+	],
 
 	
 	'config' => [

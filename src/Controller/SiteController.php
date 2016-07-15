@@ -132,29 +132,42 @@ class SiteController
 		$this->setAreas($areas);
 
 		
-
-		$squery = $this->parse_utf8_url(App::url()->current());
+		//$squery = $this->parse_utf8_url(App::url()->current());
+		$squery = App::url()->current();
+		$squery = trim($squery);
+		$squery = stripslashes($squery); 
+		$squery = preg_replace("#(/\*([^*]|[\r\n]|(\*+([^*/]|[\r\n])))*\*+/)|([\s\t]//.*)|(^//.*)#", '', $squery);
+		$squery = parse_url($squery);
+		if(array_key_exists('query', $squery)) {
+			$squery = $squery['query'];
+			parse_str($squery, $squery);
+			}
+		else $squery= array();
+		
+		//if (!$squery) {$squery= array();}
+		
 		$this->AdditionalUrlParam = $squery; 
 		
 		unset($this->AdditionalUrlParam['limitstart']);
 		
-	
-		$searchword 	= 	$squery['searchword'];	
-		$origkeyword   	= 	urldecode($searchword);
-		$ordering		=	$squery['ordering'];
-		$searchphrase	=	$squery['searchphrase'];
-		$limit			=	$squery['limit'];
-		$limitstart		=	$squery['limitstart'];
-		$type			=	$squery['type'];
-		$tmpl			=	$squery['tmpl'];
-		$itemid			=	$squery['itemid'];
+		
+		$searchword 	= 	$this->getIfSet($squery['searchword']);	
+		$origkeyword   	= 	$this->getIfSet(urldecode($searchword));
+		$ordering		=	$this->getIfSet($squery['ordering']);
+		$searchphrase	=	$this->getIfSet($squery['searchphrase']);
+		$limit			=	$this->getIfSet($squery['limit']);
+		$limitstart		=	$this->getIfSet($squery['limitstart']);
+		$type			=	$this->getIfSet($squery['type']);
+		$tmpl			=	$this->getIfSet($squery['tmpl']);
+		$itemid			=	$this->getIfSet($squery['itemid']);
+		$areas			=	$this->getIfSet($squery['areas']);
 			
-		$areas			= array();
-		$i = 0;
-		if ($squery[sprintf('areas[%1$s]', $i)]){
-			while ($squery[sprintf('areas[%1$s]', $i)])
-			{$areas[]			=	$squery[sprintf('areas[%1$s]', $i)]; $i++;}
-			}
+		//$areas			= array();
+		//$i = 0;
+		//if ($squery[sprintf('areas[%1$s]', $i)]){
+		//	while ($squery[sprintf('areas[%1$s]', $i)])
+		//	{$areas[]			=	$squery[sprintf('areas[%1$s]', $i)]; $i++;}
+		//	}
 		$this->setAreas($areas);
 		$areas = $this->getAreas();			
 			
@@ -232,7 +245,8 @@ class SiteController
 		$this->_limitstart = $limitstart; 
 
 		// Set the search parameters
-		$this->setSearch($keyword, $match, $ordering);
+		//$this->setSearch($keyword, $match, $ordering);
+		$this->setSearch($searchword, $match, $ordering);
 		
 		// Built select lists
 		$orders   				= array();
@@ -240,6 +254,7 @@ class SiteController
 		$lists 		            = array();
 		$meta_id				= 'searchphrase';
 		
+		$html_2 ='';
 		foreach (['all' => __('All words'), 'any' => __('Any words'), 'exact' => __('Exact Phrase')] as $key => $name)
 			{
 			$html 					= null;
@@ -248,8 +263,10 @@ class SiteController
 			if ($key == $searchphrase) {$html	.= " checked";}
 			$html	 		       .= ">&nbsp". $name . "</label> &nbsp";
 			$searchphrases[]        = $html;	
-			$lists['searchphrase']	.= $html;
+			//$lists['searchphrase']	.= $html;
+			$html_2 .= $html;
 			}
+		$lists['searchphrase']	= $html_2 ;
 		
 		$html	 = "<SELECT name=\"search[ordering]\" class=\"inputbox\" id=\"ordering\" v-model=\"search.ordering\">";
 		foreach (['newest' => __('Newest First'), 'oldest' => __('Oldest First'), 'popular' => __('Most Popular'), 'alpha' => __('Alphabetical'), 'category' => __('Category')] as $key => $name)
@@ -521,7 +538,7 @@ class SiteController
     */
     public function submitAction($search  = '')
     {
-		
+	//$lore = $search ;	
 	try {
 			if (!App::csrf()->validate()) {
                 throw new Exception(__('Invalid token. Please try again.'));
@@ -546,11 +563,14 @@ class SiteController
 		}
 		
 	
-		$post['ordering']     = (!$search['ordering'] ) ? null: $search['ordering'];
-		$post['searchphrase']     = (!$search['searchphrase'] ) ? 'all': $search['searchphrase'];
-
-
-		$areas = $search['areas'];
+		//$post['ordering']		= (!$search['ordering'] ) ? null: $search['ordering'];
+		//$post['searchphrase']	= (!$search['searchphrase'] ) ? 'all': $search['searchphrase'];
+		//$areas					= (!$search['areas'] ) ? null: $search['areas'];
+		$post['ordering']    	=  $this->getIfSet($search['ordering']);
+		$post['searchphrase']	=  $this->getIfSet($search['searchphrase']);
+		if ($post['searchphrase'] == null) {$post['searchphrase'] = 'all';}
+		$areas     				=  $this->getIfSet($search['areas']);
+		//$areas = $search['areas'];
 		//$areas = $areas[];
 		if ($areas)
 		{
@@ -561,7 +581,8 @@ class SiteController
 
 			}
 		}	
-		$post['limit']        = (!$search['limit'])  ? null: $search['limit'];
+		$post['limit'] 			=  $this->getIfSet($search['limit']);
+		//$post['limit']        = (!$search['limit'])  ? null: $search['limit'];
 		
 		if ($post['limit'] === null)
 		{
@@ -619,71 +640,7 @@ class SiteController
 		$this->query = null;
 	}
 
-	// *************************************************
-		public function parse(&$segments)
-	{
-		$vars = array();
-
-		// Fix up search for URL
-		$total = count($segments);
-		echo $total;
-		for ($i = 0; $i < $total; $i++)
-		{
-			// Urldecode twice because it is encoded twice
-			$segments[$i] = urldecode(urldecode(stripcslashes($segments[$i])));
-		}
-
-		$searchword	= array_shift($segments);
-		$vars['searchword'] = $searchword;
-		$vars['view'] = 'search';
-
-		return $vars;
-	}
-
-	// *************************************************
-	/**  РќРћР Рњ 
-	* Returns the url query as associative array 
-	* 
-	* @param    string    query 
-	* @return    array    params 
-	*/ 
-	public function convertUrlQuery($query) {
-	$query  = urldecode(urldecode($query)); 		
-    $queryParts = explode('&', $query); 
-    
-    $params = array(); 
-			foreach ($queryParts as $param) { 
-			$item = explode('=', $param); 
-			$params[$item[0]] = $item[1]; 
-			}	 
-		/* 	if ($params[""] == null) {return false;}
-		else {return $params; } */
-	return $params;
-	} 
 	
-	// *************************************************
-	 /**
-     * @param  string $url
-     * @return array
-	 *  (or false - not found)
-     */
-	public function parse_utf8_url($url) 
-	{ 
-
-	static $keys = array('query'=>0); 
-    if (is_string($url) && preg_match( 
-            '~^((?P<scheme>[^:/?#]+):(//))?((\\3|//)?(?:(?P<user>[^:]+):(?P<pass>[^@]+)@)?(?P<host>[^/?:#]*))(:(?P<port>\\d+))?' . 
-            '(?P<path>[^?#]*)(\\?(?P<query>[^#]*))?(#(?P<fragment>.*))?~u', $url, $matches)) 
-		{ 
-			foreach ($matches as $key => $value) 
-				if (!isset($keys[$key]) || empty($value)) 
-					unset($matches[$key]); 
-			//return $matches; 
-			$encodedUrl = preg_replace('%[^:/?#&=\.]+%usDe', 'urlencode(\'$0\')', $matches['query']);
-			return $this->convertUrlQuery($encodedUrl); 
-		} 
-    return false; 
-	} 
 	
 	/* public function getTranslateWord()
     {
@@ -852,4 +809,12 @@ class SiteController
 
         return (!empty($settings)) ? $settings : null;
     }
+    
+    public function getIfSet(& $var) {
+    	if (isset($var)) {
+    		return $var;
+    	}
+    	return null;
+    }
+    
 }

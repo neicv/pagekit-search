@@ -132,7 +132,9 @@
 						<?php  if($params['data_creation'] && $result->created): ?>
 						<li>
 							<span class="uk-article-meta">
-							<?= __('Created on:  %s', ['%s' =>  '<time datetime="'.date( 'Y-m-d H:i:s', $result->created).'">'.date($result->created).'</time>' ]) ?>
+							<!--</?= __('Created on:  %s', ['%s' =>  '<time datetime="'.date( 'Y-m-d H:i:s', $result->created).'">'.date($result->created).'</time>' ]) ?>-->
+							<?php $date = new DateTime($result->created);?>
+							<?= __('Created on:  %s', ['%s' =>  '<time datetime="'.$date->format(\DateTime::ATOM).'" v-cloak>{{ "'.$date->format(\DateTime::ATOM).'" | date "longDate" }}</time>' ]) ?>
 							</span>
 						</li>
 						<?php endif ?>

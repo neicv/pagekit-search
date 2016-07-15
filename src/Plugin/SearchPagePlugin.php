@@ -221,15 +221,15 @@ class SearchPagePlugin implements EventSubscriberInterface
 				foreach ($rows as $key => $item)
 				{
 					$list[$index]= new \stdclass();
-					$list[$index]->title 	 		= $item[title];//= $item->getTitle();
+					$list[$index]->title 	 		= $item['title'];//= $item->getTitle();
 					$list[$index]->metadesc 		= '';
 					$list[$index]->metakey 			= '';
 					$list[$index]->created			= '';
-					$list[$index]->text 	 		= $item[content];//= $item->getContent();
+					$list[$index]->text 	 		= $item['content'];//= $item->getContent();
 					$list[$index]->section			= __('Uncategorised'); // PAGE NOT HAVING A SECTION
 					$list[$index]->catslug 			= '';
 					$list[$index]->browsernav 		= '';
-					$list[$index]->href	 			= App::url($item[link]);//$item[path];//= $item->getUrl();
+					$list[$index]->href	 			= App::url($item['link']);//$item[path];//= $item->getUrl();
 					$index++;
 				}
 			$rows[] = $list;

@@ -312,7 +312,8 @@ class SearchBlogPlugin implements EventSubscriberInterface
 					->select('id, post_id, content, created')
 					->where( $where .')', $matches)
 					->whereIn('post_id', array_keys($posts))
-					->offset($page * $limit)->limit($limit)
+					//->offset($page * $limit)->limit($limit)
+					->offset(0)->limit($limit)
 					->groupBy('post_id','content');
 
 					$pending = $pending->get();

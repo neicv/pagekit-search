@@ -785,13 +785,15 @@ class EXPagination
 		if (!empty($this->additionalUrlParams))
 		{
 			$params_arr = array_reverse($this->additionalUrlParams, true);
-			foreach ($params_arr as $key => $value)
-			{
-				$params .= '&' . $key . '=' . $value;
-			}
+			//foreach ($params_arr as $key => $value)
+			//{
+			//	$params .= '&' . $key . '=' . $value;
+			//}
+			$params = http_build_query($params_arr);
 			
 			// ----- 	for ensure compatible w metod "$this->redirect('@search/site', $post);"	 -------
-			$params = '?'. substr($params, 1); 
+			//$params = '?'. substr($params, 1); 
+			$params = '?'.$params;
 			//  substitute first char "&" on "?"
 		}
 
