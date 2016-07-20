@@ -104,11 +104,11 @@ class SiteController
 		$results 	= null;
 		$ordering	= null;
 		$total   	= 0;
+		
 		//$name = $name;
 
 		// Get some data from the model
 		
-
 		// Get parameters.
 		// 'defaults' - parameters owned by default form of search
 		
@@ -152,7 +152,7 @@ class SiteController
 		
 		
 		$searchword 	= 	$this->getIfSet($squery['searchword']);	
-		$origkeyword   	= 	$this->getIfSet(urldecode($searchword));
+		//$origkeyword   	= 	$this->getIfSet(urldecode($searchword));
 		$ordering		=	$this->getIfSet($squery['ordering']);
 		$searchphrase	=	$this->getIfSet($squery['searchphrase']);
 		$limit			=	$this->getIfSet($squery['limit']);
@@ -252,6 +252,7 @@ class SiteController
 		$orders   				= array();
 		$searchphrases         	= array();
 		$lists 		            = array();
+		$lists['searchkeywordnresult'] = null;
 		$meta_id				= 'searchphrase';
 		
 		$html_2 ='';
@@ -281,7 +282,6 @@ class SiteController
 		$html	.= "</SELECT>";
 		$lists['ordering'] = $html;
 		
-	
 		
 		if ($error == null)
 		// do search
@@ -514,7 +514,7 @@ class SiteController
 			'posts'				=> [], 
 			'searchword'		=>  $searchword,
 			'results'			=>  &$results,
-			'origkeyword'		=>  $origkeyword,
+			'origkeyword'		=>  $this->origkeyword,
 			'error'				=>  $error,
 			'total'				=>  $total,
 			//'searchphrases'		=> $searchphrases[],

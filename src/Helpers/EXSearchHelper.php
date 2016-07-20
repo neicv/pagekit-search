@@ -151,7 +151,8 @@ class EXSearchHelper
 		{
 			$pruned     = array_diff($aterms, $search_ignore);
 			$searchword = implode(' ', $pruned);
-			if (count($pruned) != count($aterms)){$ignored = true;};
+			//@deprecated  0.1.2
+			//if (count($pruned) != count($aterms)){$ignored = true;};
 		}
 		//echo '</pre>';
 
