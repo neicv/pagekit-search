@@ -28,12 +28,6 @@ class SiteController
      * @var SearchExtension
      */
     protected $extension;
-
-    /**
-     * @var MessageRepositry
-     */
-    //protected $messages;
-	
 	
 	/**
 	 * Search data array
@@ -63,6 +57,10 @@ class SiteController
 	 */
 	protected $_pagination 	= null;
 	
+	 /**
+	 * offset 
+     * @var integer
+     */
 	
 	protected $_limitstart 	= null;
 	
@@ -91,7 +89,7 @@ class SiteController
 	
     /**
 	* @Route("/", name="site") 
-	* -Route(methods="GET")
+	* @Route(methods="GET")
     */
     public function indexAction()
 
@@ -105,8 +103,6 @@ class SiteController
 		$ordering	= null;
 		$total   	= 0;
 		
-		//$name = $name;
-
 		// Get some data from the model
 		
 		// Get parameters.
@@ -122,17 +118,10 @@ class SiteController
 		
 		$searchphrase = 'all';
 		
-		
 		// Set the search parameters
-		
-			
-		//Set the search areas
 
 		$areas = null;
-		$this->setAreas($areas);
 
-		
-		//$squery = $this->parse_utf8_url(App::url()->current());
 		$squery = App::url()->current();
 		$squery = trim($squery);
 		$squery = stripslashes($squery); 
@@ -144,15 +133,10 @@ class SiteController
 			}
 		else $squery= array();
 		
-		//if (!$squery) {$squery= array();}
-		
 		$this->AdditionalUrlParam = $squery; 
-		
 		unset($this->AdditionalUrlParam['limitstart']);
 		
-		
 		$searchword 	= 	$this->getIfSet($squery['searchword']);	
-		//$origkeyword   	= 	$this->getIfSet(urldecode($searchword));
 		$ordering		=	$this->getIfSet($squery['ordering']);
 		$searchphrase	=	$this->getIfSet($squery['searchphrase']);
 		$limit			=	$this->getIfSet($squery['limit']);
@@ -162,12 +146,7 @@ class SiteController
 		$itemid			=	$this->getIfSet($squery['itemid']);
 		$areas			=	$this->getIfSet($squery['areas']);
 			
-		//$areas			= array();
-		//$i = 0;
-		//if ($squery[sprintf('areas[%1$s]', $i)]){
-		//	while ($squery[sprintf('areas[%1$s]', $i)])
-		//	{$areas[]			=	$squery[sprintf('areas[%1$s]', $i)]; $i++;}
-		//	}
+		//Set the search areas
 		$this->setAreas($areas);
 		$areas = $this->getAreas();			
 			
@@ -225,7 +204,7 @@ class SiteController
 			}
 
 		// Sanitise searchword
-		//$flag = false;
+
 		if ($EXSearchHelper::santiseSearchWord($searchword, $match))
 			{
 				$error = __('One or more common words were ignored in the search.');
@@ -245,7 +224,6 @@ class SiteController
 		$this->_limitstart = $limitstart; 
 
 		// Set the search parameters
-		//$this->setSearch($keyword, $match, $ordering);
 		$this->setSearch($searchword, $match, $ordering);
 		
 		// Built select lists
@@ -264,7 +242,6 @@ class SiteController
 			if ($key == $searchphrase) {$html	.= " checked";}
 			$html	 		       .= ">&nbsp". $name . "</label> &nbsp";
 			$searchphrases[]        = $html;	
-			//$lists['searchphrase']	.= $html;
 			$html_2 .= $html;
 			}
 		$lists['searchphrase']	= $html_2 ;
@@ -293,7 +270,7 @@ class SiteController
 			
 			
 
-			$lists['searchkeywordnresult'] = $EXSearchHelper::getPluralSearchKeywordNResult($total); //($total);
+			$lists['searchkeywordnresult'] = $EXSearchHelper::getPluralSearchKeywordNResult($total); 
 
 			
 			
@@ -301,8 +278,6 @@ class SiteController
 			{
 				$row = & $results[$i]->text;
 				
-				
-				//if ($state->get('match') == 'exact')
 				if ($match == 'exact')
 				{
 					$searchwords = array($searchword);
@@ -321,7 +296,7 @@ class SiteController
 				$hl1          = '<span class="uk-text-bold uk-text-success">';// uk-text-primary">';//= '<span class="highlight">';
 				$hl2          = '</span>';
 				$posCollector = array();
-				$mbString     = extension_loaded('mbstring');  // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+				$mbString     = extension_loaded('mbstring');  // !!!
 				
 				if ($mbString)
 				{
@@ -391,7 +366,6 @@ class SiteController
 
 				if (count($posCollector))
 				{
-					//var_dump(count($posCollector));
 					// Sort by pos. Easier to handle overlapping highlighter-spans
 					ksort($posCollector);
 					$cnt                = 0;
@@ -425,10 +399,6 @@ class SiteController
 						}
 					}
 				}
-				
-				
-				
-				
 				
 				$result = & $results[$i];
 
@@ -517,7 +487,6 @@ class SiteController
 			'origkeyword'		=>  $this->origkeyword,
 			'error'				=>  $error,
 			'total'				=>  $total,
-			//'searchphrases'		=> $searchphrases[],
 			'lists'				=>	&$lists,
 			'searchareas'		=>	$areas,
 			'limit'				=>	$limit,
@@ -529,16 +498,12 @@ class SiteController
     }
 
     /**
-
 	* @Route("/submit", name="submit")
     * @Request({"search": "array"}, csrf=true)
 	* @Route(methods="POST");
-	 
-    * -Response("json")
     */
     public function submitAction($search  = '')
     {
-	//$lore = $search ;	
 	try {
 			if (!App::csrf()->validate()) {
                 throw new Exception(__('Invalid token. Please try again.'));
@@ -562,16 +527,11 @@ class SiteController
 			$post['searchword'] = $searchword;
 		}
 		
-	
-		//$post['ordering']		= (!$search['ordering'] ) ? null: $search['ordering'];
-		//$post['searchphrase']	= (!$search['searchphrase'] ) ? 'all': $search['searchphrase'];
-		//$areas					= (!$search['areas'] ) ? null: $search['areas'];
 		$post['ordering']    	=  $this->getIfSet($search['ordering']);
 		$post['searchphrase']	=  $this->getIfSet($search['searchphrase']);
 		if ($post['searchphrase'] == null) {$post['searchphrase'] = 'all';}
 		$areas     				=  $this->getIfSet($search['areas']);
-		//$areas = $search['areas'];
-		//$areas = $areas[];
+
 		if ($areas)
 		{
 			foreach ($areas as $area)
@@ -582,21 +542,15 @@ class SiteController
 			}
 		}	
 		$post['limit'] 			=  $this->getIfSet($search['limit']);
-		//$post['limit']        = (!$search['limit'])  ? null: $search['limit'];
 		
 		if ($post['limit'] === null)
 		{
 			unset($post['limit']);
 		}
 		
-		
 		unset($post['task']);
 		unset($post['submit']);
-		unset($post['csrf']);
-		
-	
-		
-		// NEW
+		//unset($post['csrf']);
 		
 		return App::redirect('@search/site', $post);
 
@@ -639,15 +593,6 @@ class SiteController
 		// Empty the query
 		$this->query = null;
 	}
-
-	
-	
-	/* public function getTranslateWord()
-    {
-        return __('Any words');
-		
-    } */
-	
 	
 	/**
 	 * Method to set the search parameters
@@ -700,7 +645,7 @@ class SiteController
 	/**
 	 * Method to get the search areas
 	 *
-	 * @since 1.5
+	 * @since 0.1
 	 */
 	public function getAreas()
 	{	
@@ -710,9 +655,6 @@ class SiteController
 			$areas = array();
 			$null_array = array();
 			$searchareas = App::trigger(new SearchEvent('search.onContentSearchAreas'))->getSearchArray(array());
-			
-			
-
 			
 			foreach ($searchareas as $area)
 			{
@@ -748,10 +690,9 @@ class SiteController
 			}
 
 			$this->_total	= count($rows);
-			//if ($this->getState('limit') > 0)
+
 			if ($this->_limit > 0)
 			{
-				//$this->_data	= array_splice($rows, $this->getState('limitstart'), $this->getState('limit'));
 				$this->_data	= array_splice($rows, $this->_limitstart, $this->_limit);
 			} else {
 				$this->_data = $rows;
@@ -816,5 +757,4 @@ class SiteController
     	}
     	return null;
     }
-    
 }

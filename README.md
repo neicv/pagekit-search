@@ -1,8 +1,9 @@
 # Pagekit Search
 
-Friendly IT Search for Pagekit extension enables you to make search request on "Blog" and "Page".
+Friendly IT Search for Pagekit extension enables you to make search request on "Blog", "Page",
+and You can use a Self Search Plugin to search through the database of your Pagekit site. 
 
-It contains "Search Widget"
+It contains "Search Widget".
 
 ![image](http://search.friendly-it.ru/storage/searchscreenshot.jpg)
 
