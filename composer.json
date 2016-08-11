@@ -14,7 +14,6 @@
         }
     ],
     "extra": {
-        "image": "assets/svg/extension.svg",
 		"icon": "icon.svg",
         "scripts": "scripts.php"
     },
