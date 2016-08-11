@@ -80,8 +80,9 @@ class SearchPagePlugin implements EventSubscriberInterface
 	
 	public function onContentSearch(SearchEvent $event)
 	{ 
-		$params = App::module('friendlyit/search')->config('defaults');
-		$limit 	= (!$params['limit_search_result']) ? self::PAGES_PER_PAGE : $params['limit_search_result'];
+		$params 	= App::module('friendlyit/search')->config('defaults');
+		$limit 		= isset($params['limit_search_result']) ? $params['limit_search_result'] : self::PAGES_PER_PAGE;
+		$markdown 	= isset($params['markdown_enabled']) ? $params['markdown_enabled'] : true ;
 		
 		$parameters = $event->getParameters();
 		
@@ -221,15 +222,16 @@ class SearchPagePlugin implements EventSubscriberInterface
 				foreach ($rows as $key => $item)
 				{
 					$list[$index]= new \stdclass();
-					$list[$index]->title 	 		= $item['title'];//= $item->getTitle();
+					$list[$index]->title 	 		= $item['title'];
 					$list[$index]->metadesc 		= '';
 					$list[$index]->metakey 			= '';
 					$list[$index]->created			= '';
-					$list[$index]->text 	 		= $item['content'];//= $item->getContent();
+					//$list[$index]->text 	 		= $item['content'];
+					$list[$index]->text 	 		= App::content()->applyPlugins($item['content'], ['item' => $item, 'markdown' => $markdown]);
 					$list[$index]->section			= __('Uncategorised'); // PAGE NOT HAVING A SECTION
 					$list[$index]->catslug 			= '';
 					$list[$index]->browsernav 		= '';
-					$list[$index]->href	 			= App::url($item['link']);//$item[path];//= $item->getUrl();
+					$list[$index]->href	 			= App::url($item['link']);
 					$index++;
 				}
 			$rows[] = $list;

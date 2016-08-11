@@ -441,36 +441,6 @@ class EXPagination
 	}
 
 	/**
-	 * Get the pagination links
-	 *
-	 * @param   string  $layoutId  Layout to render the links
-	 * @param   array   $options   Optional array with settings for the layout
-	 *
-	 * @return  string  Pagination links.
-	 *
-	 * @since   3.3
-	 */
-/* 	public function getPaginationLinks($layoutId = 'joomla.pagination.links', $options = array())
-	{
-		// Allow to receive a null layout
-		$layoutId = (null === $layoutId) ? 'joomla.pagination.links' : $layoutId;
-
-		//$app = JFactory::getApplication();
-
-		$list = array(
-			'prefix'       => $this->prefix,
-			'limit'        => $this->limit,
-			'limitstart'   => $this->limitstart,
-			'total'        => $this->total,
-			'limitfield'   => $this->getLimitBox(),
-			'pagescounter' => $this->getPagesCounter(),
-			'pages'        => $this->getPaginationPages()
-		);
-
-		return JLayoutHelper::render($layoutId, array('list' => $list, 'options' => $options));
-	} */
-
-	/**
 	 * Create and return the pagination page list string, ie. Previous, Next, 1 2 3 ... x.
 	 *
 	 * @return  string  Pagination page list string.
@@ -518,40 +488,6 @@ class EXPagination
 	}
 
 	/**
-	 * Return the pagination footer.
-	 *
-	 * @return  string  Pagination footer.
-	 *
-	 * @since   1.5
-	 */
-	public function getListFooter()
-	{
-		// Keep B/C for overrides done with chromes
-		// $chromePath = JPATH_THEMES . '/' . JFactory::getApplication()->getTemplate() . '/html/pagination.php';
-
-		// if (file_exists($chromePath))
-		// {
-			// $list = array();
-			// $list['prefix'] = $this->prefix;
-			// $list['limit'] = $this->limit;
-			// $list['limitstart'] = $this->limitstart;
-			// $list['total'] = $this->total;
-			// $list['limitfield'] = $this->getLimitBox();
-			// $list['pagescounter'] = $this->getPagesCounter();
-			// $list['pageslinks'] = $this->getPagesLinks();
-
-			// include_once $chromePath;
-
-			// if (function_exists('pagination_list_footer'))
-			// {
-				// return pagination_list_footer($list);
-			// }
-		// }
-
-		return $this->getPaginationLinks();
-	}
-
-	/**
 	 * Creates a dropdown box for selecting how many records to show per page.
 	 *
 	 * @return  string  The HTML for the limit # input box.
@@ -590,81 +526,7 @@ class EXPagination
 		return $html;
 	}
 	
-	/**
-	 * Return the icon to move an item UP.
-	 *
-	 * @param   integer  $i          The row index.
-	 * @param   boolean  $condition  True to show the icon.
-	 * @param   string   $task       The task to fire.
-	 * @param   string   $alt        The image alternative text string.
-	 * @param   boolean  $enabled    An optional setting for access control on the action.
-	 * @param   string   $checkbox   An optional prefix for checkboxes.
-	 *
-	 * @return  string   Either the icon to move an item up or a space.
-	 *
-	 * @since   1.5
-	 */
-	/* public function orderUpIcon($i, $condition = true, $task = 'orderup', $alt = 'JLIB_HTML_MOVE_UP', $enabled = true, $checkbox = 'cb')
-	{
-		if (($i > 0 || ($i + $this->limitstart > 0)) && $condition)
-		{
-			return JHtml::_('jgrid.orderUp', $i, $task, '', $alt, $enabled, $checkbox);
-		}
-		else
-		{
-			return '&#160;';
-		}
-	} */
 
-	/**
-	 * Return the icon to move an item DOWN.
-	 *
-	 * @param   integer  $i          The row index.
-	 * @param   integer  $n          The number of items in the list.
-	 * @param   boolean  $condition  True to show the icon.
-	 * @param   string   $task       The task to fire.
-	 * @param   string   $alt        The image alternative text string.
-	 * @param   boolean  $enabled    An optional setting for access control on the action.
-	 * @param   string   $checkbox   An optional prefix for checkboxes.
-	 *
-	 * @return  string   Either the icon to move an item down or a space.
-	 *
-	 * @since   1.5
-	 */
-	/* public function orderDownIcon($i, $n, $condition = true, $task = 'orderdown', $alt = 'JLIB_HTML_MOVE_DOWN', $enabled = true, $checkbox = 'cb')
-	{
-		if (($i < $n - 1 || $i + $this->limitstart < $this->total - 1) && $condition)
-		{
-			return JHtml::_('jgrid.orderDown', $i, $task, '', $alt, $enabled, $checkbox);
-		}
-		else
-		{
-			return '&#160;';
-		}
-	} */
-
-	/**
-	 * Create the HTML for a list footer
-	 *
-	 * @param   array  $list  Pagination list data structure.
-	 *
-	 * @return  string  HTML for a list footer
-	 *
-	 * @since   1.5
-	 */
-	/* protected function _list_footer($list)
-	{
-		$html = "<div class=\"list-footer\">\n";
-
-		$html .= "\n<div class=\"limit\">" . JText::_('JGLOBAL_DISPLAY_NUM') . $list['limitfield'] . "</div>";
-		$html .= $list['pageslinks'];
-		$html .= "\n<div class=\"counter\">" . $list['pagescounter'] . "</div>";
-
-		$html .= "\n<input type=\"hidden\" name=\"" . $list['prefix'] . "limitstart\" value=\"" . $list['limitstart'] . "\" />";
-		$html .= "\n</div>";
-
-		return $html;
-	} */
 
 	/**
 	 * Create the html for a list footer

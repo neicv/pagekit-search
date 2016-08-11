@@ -99,7 +99,8 @@ class SearchBlogPlugin implements EventSubscriberInterface
 		if (!$blog = App::module('blog')) {return array();}
 		
 		$params = App::module('friendlyit/search')->config('defaults');
-		$limit 	= (!$params['limit_search_result']) ? self::PAGES_PER_PAGE : $params['limit_search_result'];
+		$limit 		= isset($params['limit_search_result']) ? $params['limit_search_result'] : self::PAGES_PER_PAGE;
+		$markdown 	= isset($params['markdown_enabled']) ? $params['markdown_enabled'] : true ;
 		
 		$parameters = $event->getParameters();
 		
@@ -239,7 +240,8 @@ class SearchBlogPlugin implements EventSubscriberInterface
 					$list[$index]->metadesc 		= '';
 					$list[$index]->metakey 			= '';
 					$list[$index]->created			= $item['date'];
-					$list[$index]->text 	 		= $item['text'];
+					//$list[$index]->text 	 		= $item['text'];
+					$list[$index]->text 	 		= App::content()->applyPlugins($item['text'], ['item' => $item, 'markdown' => $markdown]);
 					$list[$index]->section			= __('Blog'); // PAGE NOT HAVING A SECTION
 					$list[$index]->catslug 			= '';
 					$list[$index]->browsernav 		= '';
@@ -337,7 +339,8 @@ class SearchBlogPlugin implements EventSubscriberInterface
 						$list[$index]->metadesc 		= '';
 						$list[$index]->metakey 			= '';
 						$list[$index]->created			= $item['created'];
-						$list[$index]->text 	 		= $item['content'];
+						//$list[$index]->text 	 		= $item['content'];
+						$list[$index]->text 	 		= App::content()->applyPlugins($item['content'], ['item' => $item, 'markdown' => $markdown]);
 						$list[$index]->section			= __('Blog comments'); // PAGE NOT HAVING A SECTION
 						$list[$index]->catslug 			= '';
 						$list[$index]->browsernav 		= '';

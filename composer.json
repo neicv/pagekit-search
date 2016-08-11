@@ -2,7 +2,7 @@
     "name": "friendlyit/search",
 	"module": "friendlyit/search",
 	"type": "pagekit-extension",
-    "version": "0.1.2",
+    "version": "0.1.3",
     "title": "Search",
     "description": "Add a configurable search form to your site.",
     "license": "MIT",

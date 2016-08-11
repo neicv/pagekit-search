@@ -68,6 +68,12 @@ class SearchContentPlugin implements EventSubscriberInterface
 	public function onContentSearch(SearchEvent $event)
 	{ 
 	  
+		if (!$article = App::module('article')) {return array();}
+		
+		$params = App::module('friendlyit/search')->config('defaults');
+		$limit 		= isset($params['limit_search_result']) ? $params['limit_search_result'] : self::PAGES_PER_PAGE;
+		$markdown 	= isset($params['markdown_enabled']) ? $params['markdown_enabled'] : true ;
+	  
 		$parameters = $event->getParameters();
 		
 		$text 		= $parameters[0];
