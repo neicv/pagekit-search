@@ -1073,7 +1073,7 @@ class De_DELocalise extends EXSearchHelper
 	 */
 	public static function getUpperLimitSearchWord()
 	{
-		return 20;
+		return 128;
 	}
 
 	/**

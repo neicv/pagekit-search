@@ -1,0 +1,14 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg version="1.1" id="icon-large-bars" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
+	 x="0px" y="0px" width="25px" height="25px" viewBox="0 0 25 25" enable-background="new 0 0 25 25" xml:space="preserve">
+<g>
+	<path fill="#666666" d="M0.5,6c5.9,0,18,0,24,0C24.8,6,25,5.8,25,5.5S24.9,5,24.5,5c-6,0-18.1,0-24,0C0.2,5,0,5.2,0,5.5
+		C0,5.8,0.2,6,0.5,6z"/>
+	<path fill="#666666" d="M0.5,13c5.9,0,18,0,24,0c0.3,0,0.5-0.2,0.5-0.5S24.9,12,24.5,12c-6,0-18.1,0-24,0C0.2,12,0,12.2,0,12.5
+		C0,12.8,0.2,13,0.5,13z"/>
+	<path fill="#666666" d="M0.5,20c5.9,0,18,0,24,0c0.3,0,0.5-0.2,0.5-0.5S24.9,19,24.5,19c-6,0-18.1,0-24,0C0.2,19,0,19.2,0,19.5
+		C0,19.8,0.2,20,0.5,20z"/>
+	<path fill="#666666" d="M0,5.5"/>
+</g>
+</svg>

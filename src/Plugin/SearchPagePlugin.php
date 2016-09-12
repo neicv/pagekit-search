@@ -12,7 +12,6 @@ namespace Friendlyit\Search\Plugin;
 use Friendlyit\Search\Helpers\EXSearchHelper;
 use Friendlyit\Search\Event\SearchEvent;
 
-
 use Pagekit\Component\Database\ORM\Repository;
 use Pagekit\Event\EventSubscriberInterface;
 
@@ -105,25 +104,31 @@ class SearchPagePlugin implements EventSubscriberInterface
 			}
 		} 
 
-		$text = trim($text);
+		//$text = trim($text); 
+		$text = EXSearchHelper::strip_data(trim($text));
 		$text = stripslashes($text); 
 		$text = htmlspecialchars($text); 
+		$text = mysql_escape_string($text);
 		
 		if ($text == '')
 		{
 			return array();
 		}
 		
-
+		if (App::db()->getDatabasePlatform()->getName() === 'sqlite') $b_sqlite = true; else $b_sqlite = false;
+		//(bool)$b_sqlite = (App::db()->getDatabasePlatform()->getName() === 'sqlite') ?  false :  true;
+		//$dbname = App::db()->getDatabasePlatform()->getName();
+		
+		
+		
 		$matches = array();
 		switch ($phrase)
 		{
 			case 'exact':
-				//$text = $this['db']->quote('%' . $this['db']->escape($text, true) . '%', false);
 				$words = $text;
 				$wheres2 = array();
-				$wheres2[] = 'a.title LIKE :v1';// . $words;
-				$wheres2[] = 'a.content LIKE :v1';// . $words;
+				$wheres2[] = 'a.title LIKE :v1';
+				$wheres2[] = 'a.content LIKE :v1';
 				$where = '(' . implode(') OR (', $wheres2) . ')';
 				$matches['v1'] = "%{$text}%"; 
 				break;
@@ -136,10 +141,9 @@ class SearchPagePlugin implements EventSubscriberInterface
 				$key_index = 1;
 				foreach ($words as $word)
 				{
-					//$word = $this['db']->quote('%' . $this['db']->getEscaped($word, true) . '%', false);
 					$wheres2 = array();
-					$wheres2[] = 'a.title LIKE :v'. $key_index;//1';// . $word;
-					$wheres2[] = 'a.content LIKE :v'. $key_index;//1';//. $word;
+					$wheres2[] = 'a.title LIKE :v'. $key_index;
+					$wheres2[] = 'a.content LIKE :v'. $key_index;
 					$wheres[] = implode(' OR ', $wheres2);
 					$matches['v' .$key_index] = "%{$word}%";
 					++$key_index;
@@ -153,7 +157,7 @@ class SearchPagePlugin implements EventSubscriberInterface
 		switch ($ordering)
 		{
 			case 'oldest':
-				$order = 'a.id, ASC';//"'a.created ASC'";
+				$order = 'a.id, ASC';
 				break;
 
 			case 'popular':
@@ -161,16 +165,16 @@ class SearchPagePlugin implements EventSubscriberInterface
 				//break;
 
 			case 'alpha':
-				$order = 'a.title, ASC';//array('title'=>'ASC');
+				$order = 'a.title, ASC';
 				break;
 
 			case 'category':
-				$order = 'a.title, ASC'; //array('title'=>'ASC'); 
+				$order = 'a.title, ASC';
 				break;
 
 			case 'newest':
 			default:
-				$order = 'a.id, DESC'; //array('title'=>'DESC');// DESC
+				$order = 'a.id, DESC';
 				break;
 		}
 
@@ -187,12 +191,14 @@ class SearchPagePlugin implements EventSubscriberInterface
 			
 			$where = '(c.status = :v0) AND (' . $where;
 
-	
+			if (!$b_sqlite) {$concatestr = 'CONCAT (\'%"defaults":{"id":\', cast(a.id as char),\'}%\')';}
+			else {$concatestr = '(\'%"defaults":{"id":\'|| cast(a.id as char) || \'}%\')';}
+			
+			//var_dump($dbname, $b_sqlite, $concatestr);
 			
 			$query = App::db()->createQueryBuilder()
 				->from('@system_page a')
-				//->join('@system_node c', '(c.type LIKE :v00 AND c.data LIKE :v01)', 'INNER')
-				->join('@system_node c', '(c.type LIKE :v00 AND c.data LIKE CONCAT (\'%"defaults":{"id":\', cast(a.id as char),\'%\'))', 'INNER')
+				->join('@system_node c', '(c.type LIKE :v00 AND c.data LIKE '.$concatestr.')', 'INNER')
 				->Where( $where .')', $matches);
 
 			$orders = explode(",", $order);

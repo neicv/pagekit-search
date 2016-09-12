@@ -2,7 +2,9 @@ module.exports = [
 
     {
         entry: {
-            "settings": "./app/views/settings.js",
+            //"settings": "./app/components/settings.vue",
+			"statistics-index": "./app/views/statistics-index.js",
+			"settings": "./app/views/settings.js",
 			"search": "./app/views/search.js",
 			"search-widget-settings": "./app/components/search-widget-settings.vue",
         },
@@ -16,6 +18,7 @@ module.exports = [
         },     
         module: {
             loaders: [
+				{ test: /\.html$/, loader: "vue-html" },
                 { test: /\.vue$/, loader: "vue" }
             ]
         }

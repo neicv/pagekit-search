@@ -10,7 +10,7 @@ namespace Friendlyit\Search\Controller;
 
 use Pagekit\Application as App;
 use Friendlyit\Search\Helpers\EXFilterInput;
-use Friendlyit\Search\Helpers\EXSearchHelper;
+use Friendlyit\Search\Helpers\EXSearchHelper;// as EXSearchHelper;
 use Friendlyit\Search\Helpers\EXPagination;
 use Friendlyit\Search\SearchExtension;
 use Friendlyit\Search\Entity\Search;
@@ -18,6 +18,8 @@ use Friendlyit\Search\Event\SearchEvent;
 use Pagekit\Framework\Controller\Controller;
 use Pagekit\Framework\Controller\Exception;
 use Pagekit\Extension\Extension;
+//use Friendlyit\Search\Model\SearchKeywords;
+
 
 /**
  * -Route("/search")
@@ -30,12 +32,38 @@ class SiteController
     protected $extension;
 	
 	/**
+     * @var EXSearchHelper
+     */
+	protected $exsearchhelper;
+	
+	/**
 	 * Search data array
 	 *
 	 * @var array
 	 */
 	protected $_data = null;
-
+	
+	/**
+	 * Search key words
+	 *
+	 * @var string
+	 */
+	protected $_keyword = null;
+	
+	/**
+	 * Search match expression
+	 *
+	 * @var string
+	 */
+	protected $_match = null;
+	
+	/**
+	 * Search ordering
+	 *
+	 * @var string
+	 */
+	protected $_ordering = null;
+	
 	/**
 	 * Search total
 	 *
@@ -70,6 +98,12 @@ class SiteController
      */
 	protected $_limit 		= null;
 	
+	 /**
+	 * Log Searsh Enabled
+     * @var bool
+     */
+	protected $_enable_log_searches = false;
+	
 	protected $AdditionalUrlParam = null;
 	
 	
@@ -81,9 +115,9 @@ class SiteController
      */
     public function __construct()
     {
-		
         $this->extension = App::module('friendlyit/search');
-	   
+		//$this->EXSearchHelper = new EXSearchHelper();
+        $this->exsearchhelper = EXSearchHelper::getInstance();  
     }
 
 	
@@ -95,9 +129,9 @@ class SiteController
 
     {	
 		//$lang  = $this['option']->get('system:app.locale');
-    	
 		$squery		= null;
-		$error   	= null;
+		$msg_error 	= null;
+		$error		= false;
 		$rows    	= null;
 		$results 	= null;
 		$ordering	= null;
@@ -106,14 +140,20 @@ class SiteController
 		// Get some data from the model
 		
 		// Get parameters.
-		// 'defaults' - parameters owned by default form of search
 		
-		$params = $this->extension->config('defaults'); // 
+		// 'advanced' - parameters owned by advanced form of search		
+		$params = $this->extension->config('advanced');	
+		// Get switсh Search Statistics Enable
+		$this->_enable_log_searches	= isset($params['statistics_enabled']) ? $params['statistics_enabled'] : false ;
+		
+		// 'defaults' - parameters owned by default form of search
+		$params = $this->extension->config('defaults'); 
 		
 		// Get the pagination request variables
-		
 		$this->_limit = (!$params['result_per_page']) ? 15 : $params['result_per_page'];
 		$this->_limitstart = '0';
+
+
 
 		
 		$searchphrase = 'all';
@@ -145,7 +185,7 @@ class SiteController
 		$tmpl			=	$this->getIfSet($squery['tmpl']);
 		$itemid			=	$this->getIfSet($squery['itemid']);
 		$areas			=	$this->getIfSet($squery['areas']);
-			
+		
 		//Set the search areas
 		$this->setAreas($areas);
 		$areas = $this->getAreas();			
@@ -182,7 +222,6 @@ class SiteController
 	
 		if (!in_array($ordering,['newest', 'oldest', 'popular', 'alpha', 'category'])){
 			$ordering	= 'newest';}
-				
 			
 			
 		// Log the search
@@ -190,30 +229,34 @@ class SiteController
 
 		// Limit searchword
 
-		$EXSearchHelper = new EXSearchHelper();
+		//$EXSearchHelper = new EXSearchHelper();
 
-		$upper_limit = $EXSearchHelper::getUpperLimitSearchWord();
-		$lower_limit = $EXSearchHelper::getLowerLimitSearchWord();
+		$upper_limit = $this->exsearchhelper->getUpperLimitSearchWord();
+		$lower_limit = $this->exsearchhelper->getLowerLimitSearchWord();
 		
 		$upper_limit = (int)((!$upper_limit) ? 200 : $upper_limit);
 		
-		if ($EXSearchHelper::limitSearchWord($searchword))
+		if ($this->exsearchhelper->limitSearchWord($searchword))
 			{
 				$s = __('Search term must be a minimum of %1$s characters and a maximum of %2$s characters.');
-				$error = sprintf($s, $lower_limit, $upper_limit);
+				$msg_error = sprintf($s, $lower_limit, $upper_limit);
+				$error = true;
 			}
 
 		// Sanitise searchword
-
-		if ($EXSearchHelper::santiseSearchWord($searchword, $match))
+		if ($this->exsearchhelper->santiseSearchWord($searchword, $match))
 			{
-				$error = __('One or more common words were ignored in the search.');
+				$msg_error = __('One or more common words were ignored in the search.');
 			}
 
 		// Put the filtered results back into the model
-
-		$this->keyword = $searchword;
-
+		$this->_keyword = $searchword;
+		
+		// Statistics Search
+		if ((!$error) && $this->_enable_log_searches)
+			{
+				EXSearchHelper::logSearch($searchword);
+			}
 		
 		// Built select lists
 		$searchphrase    = (!$searchphrase ) ? 'all': $searchphrase;
@@ -259,221 +302,204 @@ class SiteController
 		$html	.= "</SELECT>";
 		$lists['ordering'] = $html;
 		
-		
-		if ($error == null)
+		if (!$error)
 		// do search
 		{
-
 			$results    = $this->getData();
 			$total      = $this->getTotal();
 			$pagination = $this->getPagination();
 			
-			
+			// ---- If is autocomplete literally Widget search	----:	
+			if ($type == 'json' && $tmpl == 'raw') {	
 
-			$lists['searchkeywordnresult'] = $EXSearchHelper::getPluralSearchKeywordNResult($total); 
+				// set defaults
+				$data = array();
+				# get settings
+				$itemid	= (int)((!$itemid) ? null : $itemid);
+				if ($itemid){
+					$settings = $this->getWidgetSettings($itemid);
+					$settings = (!empty($settings->data)) ? json_decode($settings->data, true) : array();
 
-			
-			
-			for ($i = 0, $count = count($results); $i < $count; $i++)
-			{
-				$row = & $results[$i]->text;
-				
-				if ($match == 'exact')
-				{
-					$searchwords = array($searchword);
-					$needle      = $searchword;
-				}
-				else
-				{
-					$searchworda = preg_replace('#\xE3\x80\x80#s', ' ', $searchword);
-					$searchwords = preg_split("/\s+/u", $searchworda);
-					$needle      = $searchwords[0];
-				}
-				
-				$row          = EXSearchHelper::prepareSearchContent($row, $needle);
-				$searchwords  = array_values(array_unique($searchwords));
-				$srow         = mb_strtolower(EXSearchHelper::remove_accents($row), 'UTF-8');  // !!!!!!!!!!!!!!!!!!!!!!!!
-				$hl1          = '<span class="uk-text-bold uk-text-success">';// uk-text-primary">';//= '<span class="highlight">';
-				$hl2          = '</span>';
-				$posCollector = array();
-				$mbString     = extension_loaded('mbstring');  // !!!
-				
-				if ($mbString)
-				{
-					// E.g. german umlauts like Г¤ are converted to ae and so
-					// $pos calculated with $srow doesn't match for $row
-					$correctPos     = (mb_strlen($srow) > mb_strlen($row));
-					$highlighterLen = mb_strlen($hl1 . $hl2);
-					
-				}
-				else
-				{
-					// E.g. german umlauts like Г¤ are converted to ae and so
-					// $pos calculated with $srow desn't match for $row
-					$correctPos     = (strlen($srow) > strlen($row));
-					$highlighterLen = strlen($hl1 . $hl2);
-				}
-				
-				foreach ($searchwords as $hlword)
-				{
-					if ($mbString)
-					{
-						if (($pos = mb_strpos($srow, mb_strtolower(EXSearchHelper::remove_accents($hlword), 'UTF-8'))) !== false) // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+					# push retrieved settings
+					foreach ($settings as $key => $value)
 						{
-							// Iconv transliterates 'в‚¬' to 'EUR'
-							// TODO: add other expanding translations?
-							$eur_compensation = $pos > 0 ? substr_count($row, "\xE2\x82\xAC", 0, $pos) * 2 : 0;
-							$pos              -= $eur_compensation;
-
-							if ($correctPos)
-							{
-								// Calculate necessary corrections from 0 to current $pos
-								$ChkRow     = mb_substr($row, 0, $pos);
-								$sChkRowLen = mb_strlen(mb_strtolower(EXSearchHelper::remove_accents($ChkRow), 'UTF-8'));
-								$ChkRowLen  = mb_strlen($ChkRow);
-								// correct $pos
-								$pos -= ($sChkRowLen - $ChkRowLen);
-							}
-
-							// Collect pos and searchword
-							$posCollector[$pos] = $hlword;
+							$data[$key] = $value;
 						}
+					$res_limit  = (int)((!$data['result_per_page']) ? 6 : $data['result_per_page']);
+					$char_limit = (int)((!$data['char_limit']) ? 110 : $data['char_limit']);
+					}
+				else {
+					$res_limit  = 6;	
+					$char_limit = 110;
+					}
+				
+				//search results
+				$res_items = array();
+				if (!$error && count($results) > 0) {
+					foreach ($results as $res) {
+						
+						// strip text
+						$text = str_replace(array("\r\n", "\n", "\r", "\t"), " ", $res->text);
+						$text = html_entity_decode($text, ENT_COMPAT, 'UTF-8');
+						$text = preg_replace('/{.+?}/', '', $text);
+						$text = substr(trim(strip_tags($text)), 0, $char_limit);
+
+						// create item
+						$item          = array();
+						$item['title'] = '<div class="uk-text-bold">'. $res->title . '</div>';
+						$item['text']  = substr_replace($text, '...', strrpos($text, ' '));
+						$item['url']   = App::url($res->href);
+						$res_items[]   = $item;
+						
+					}
+				}	
+				
+				if (App::request()->isXmlHttpRequest()) 
+					{
+						return App::response()->json(array('results' => array_slice($res_items, 0, $res_limit), 'count'=> count($results), 'error' => $msg_error));
+					}
+			}
+			
+			else 
+			{	
+				$lists['searchkeywordnresult'] = $this->exsearchhelper->getPluralSearchKeywordNResult($total); 
+
+				for ($i = 0, $count = count($results); $i < $count; $i++)
+				{
+					$row = & $results[$i]->text;
+					
+					if ($match == 'exact')
+					{
+						$searchwords = array($searchword);
+						$needle      = $searchword;
 					}
 					else
 					{
-						if (($pos =strpos($srow, strtolower(EXSearchHelper::remove_accents($hlword)))) !== false)
-						{
-							// iconv transliterates 'в‚¬' to 'EUR'
-							// TODO: add other expanding translations?
-							$eur_compensation = $pos > 0 ? substr_count($row, "\xE2\x82\xAC", 0, $pos) * 2 : 0;
-							$pos              -= $eur_compensation;
-
-							if ($correctPos)
-							{
-								// Calculate necessary corrections from 0 to current $pos
-								$ChkRow     = substr($row, 0, $pos);
-								$sChkRowLen = strlen(strtolower(EXSearchHelper::remove_accents($ChkRow)));
-								$ChkRowLen  = strlen($ChkRow);
-								// Correct $pos
-								$pos -= ($sChkRowLen - $ChkRowLen);
-							}
-
-							// Collect pos and searchword
-							$posCollector[$pos] = $hlword;
-						}
+						$searchworda = preg_replace('#\xE3\x80\x80#s', ' ', $searchword);
+						$searchwords = preg_split("/\s+/u", $searchworda);
+						$needle      = $searchwords[0];
 					}
-				}
-
-				if (count($posCollector))
-				{
-					// Sort by pos. Easier to handle overlapping highlighter-spans
-					ksort($posCollector);
-					$cnt                = 0;
-					$lastHighlighterEnd = -1;
-
-					foreach ($posCollector as  $pos => $hlword)
+					
+					$row          = EXSearchHelper::prepareSearchContent($row, $needle);
+					$searchwords  = array_values(array_unique($searchwords));
+					$srow         = mb_strtolower(EXSearchHelper::remove_accents($row), 'UTF-8');  // !!!!!!!!!!!!!!!!!!!!!!!!
+					$hl1          = '<span class="uk-text-bold uk-text-success">';// uk-text-primary">';//= '<span class="highlight">';
+					$hl2          = '</span>';
+					$posCollector = array();
+					$mbString     = extension_loaded('mbstring');  // !!!
+					
+					if ($mbString)
 					{
-						$pos += $cnt * $highlighterLen;
-						// Avoid overlapping/corrupted highlighter-spans
-						// TODO $chkOverlap could be used to highlight remaining part
-						// of searchword outside last highlighter-span.
-						// At the moment no additional highlighter is set.
-						$chkOverlap = $pos - $lastHighlighterEnd;
-
-						if ($chkOverlap >= 0)
+						// E.g. german umlauts like Г¤ are converted to ae and so
+						// $pos calculated with $srow doesn't match for $row
+						$correctPos     = (mb_strlen($srow) > mb_strlen($row));
+						$highlighterLen = mb_strlen($hl1 . $hl2);
+						
+					}
+					else
+					{
+						// E.g. german umlauts like Г¤ are converted to ae and so
+						// $pos calculated with $srow desn't match for $row
+						$correctPos     = (strlen($srow) > strlen($row));
+						$highlighterLen = strlen($hl1 . $hl2);
+					}
+					
+					foreach ($searchwords as $hlword)
+					{
+						if ($mbString)
 						{
-							// Set highlighter around searchword
-							if ($mbString)
+							if (($pos = mb_strpos($srow, mb_strtolower(EXSearchHelper::remove_accents($hlword), 'UTF-8'))) !== false) // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 							{
-								$hlwordLen = mb_strlen($hlword);
-								$row       = mb_substr($row, 0, $pos) . $hl1 . mb_substr($row, $pos, $hlwordLen) . $hl2 . mb_substr($row, $pos + $hlwordLen);
-							}
-							else
-							{
-								$hlwordLen = strlen($hlword);
-								$row       = substr($row, 0, $pos) . $hl1 . substr($row, $pos, strlen($hlword)) . $hl2 . substr($row, $pos + strlen($hlword));
-							}
+								// Iconv transliterates 'в‚¬' to 'EUR'
+								// TODO: add other expanding translations?
+								$eur_compensation = $pos > 0 ? substr_count($row, "\xE2\x82\xAC", 0, $pos) * 2 : 0;
+								$pos              -= $eur_compensation;
 
-							$cnt++;
-							$lastHighlighterEnd = $pos + $hlwordLen + $highlighterLen;
+								if ($correctPos)
+								{
+									// Calculate necessary corrections from 0 to current $pos
+									$ChkRow     = mb_substr($row, 0, $pos);
+									$sChkRowLen = mb_strlen(mb_strtolower(EXSearchHelper::remove_accents($ChkRow), 'UTF-8'));
+									$ChkRowLen  = mb_strlen($ChkRow);
+									// correct $pos
+									$pos -= ($sChkRowLen - $ChkRowLen);
+								}
+
+								// Collect pos and searchword
+								$posCollector[$pos] = $hlword;
+							}
+						}
+						else
+						{
+							if (($pos =strpos($srow, strtolower(EXSearchHelper::remove_accents($hlword)))) !== false)
+							{
+								// iconv transliterates 'в‚¬' to 'EUR'
+								// TODO: add other expanding translations?
+								$eur_compensation = $pos > 0 ? substr_count($row, "\xE2\x82\xAC", 0, $pos) * 2 : 0;
+								$pos              -= $eur_compensation;
+
+								if ($correctPos)
+								{
+									// Calculate necessary corrections from 0 to current $pos
+									$ChkRow     = substr($row, 0, $pos);
+									$sChkRowLen = strlen(strtolower(EXSearchHelper::remove_accents($ChkRow)));
+									$ChkRowLen  = strlen($ChkRow);
+									// Correct $pos
+									$pos -= ($sChkRowLen - $ChkRowLen);
+								}
+
+								// Collect pos and searchword
+								$posCollector[$pos] = $hlword;
+							}
 						}
 					}
-				}
-				
-				$result = & $results[$i];
 
-				if (!$result->created) {$result->created = '';}
-				$result->count   = $i + 1;
+					if (count($posCollector))
+					{
+						// Sort by pos. Easier to handle overlapping highlighter-spans
+						ksort($posCollector);
+						$cnt                = 0;
+						$lastHighlighterEnd = -1;
+
+						foreach ($posCollector as  $pos => $hlword)
+						{
+							$pos += $cnt * $highlighterLen;
+							// Avoid overlapping/corrupted highlighter-spans
+							// TODO $chkOverlap could be used to highlight remaining part
+							// of searchword outside last highlighter-span.
+							// At the moment no additional highlighter is set.
+							$chkOverlap = $pos - $lastHighlighterEnd;
+
+							if ($chkOverlap >= 0)
+							{
+								// Set highlighter around searchword
+								if ($mbString)
+								{
+									$hlwordLen = mb_strlen($hlword);
+									$row       = mb_substr($row, 0, $pos) . $hl1 . mb_substr($row, $pos, $hlwordLen) . $hl2 . mb_substr($row, $pos + $hlwordLen);
+								}
+								else
+								{
+									$hlwordLen = strlen($hlword);
+									$row       = substr($row, 0, $pos) . $hl1 . substr($row, $pos, strlen($hlword)) . $hl2 . substr($row, $pos + strlen($hlword));
+								}
+
+								$cnt++;
+								$lastHighlighterEnd = $pos + $hlwordLen + $highlighterLen;
+							}
+						}
+					}
+					$result = & $results[$i];
+
+					if (!$result->created) {$result->created = '';}
+					$result->count   = $i + 1;
+				}
 			}
 		}
-	
-		
-		
-		$this->searchword    	= $searchword;
-		$this->origkeyword		= $searchword;
-		$this->error			= $error;
-		$this->lists            = &$lists;
-		$this->searchareas   	= $areas;
-		$this->results       	= &$results;
-		$this->total         	= $total;
-		$this->pagination   	= &$pagination;
-			
 
+		$this->_total         	= $total;
+		$this->_pagination   	= &$pagination;
 		
-		// ---- If is autocomplete literally Widget search	----:	
-		
-		if ($type == 'json' && $tmpl == 'raw') {	
-
-			// set defaults
-			
-			$data = array();
-			# get settings
-			$itemid	= (int)((!$itemid) ? null : $itemid);
-			if ($itemid){
-				$settings = $this->getWidgetSettings($itemid);
-				$settings = (!empty($settings->data)) ? json_decode($settings->data, true) : array();
-
-				# push retrieved settings
-				foreach ($settings as $key => $value)
-				{
-					$data[$key] = $value;
-				}
-			$res_limit  = (int)((!$data['result_per_page']) ? 6 : $data['result_per_page']);
-			$char_limit = (int)((!$data['char_limit']) ? 110 : $data['char_limit']);
-			}
-			else {
-			$res_limit  = 6;	
-			$char_limit = 110;
-			}
-			
-			//search results
-			$res_items = array();
-			if (!$error && count($results) > 0) {
-				foreach ($results as $res) {
-					
-					// strip text
-					$text = str_replace(array("\r\n", "\n", "\r", "\t"), "", $res->text);
-					$text = html_entity_decode($text, ENT_COMPAT, 'UTF-8');
-					$text = preg_replace('/{.+?}/', '', $text);
-					$text = substr(trim(strip_tags($text)), 0, $char_limit);
-
-					// create item
-					$item          = array();
-					$item['title'] = '<div class="uk-text-bold">'. $res->title . '</div>';
-					$item['text']  = substr_replace($text, '...', strrpos($text, ' '));
-					$item['url']   = App::url($res->href);
-					$res_items[]   = $item;
-					
-				}
-				
-			}	
-			
-			
-			if (App::request()->isXmlHttpRequest()) {
-				return App::response()->json(array('results' => array_slice($res_items, 0, $res_limit), 'count'=> count($results), 'error' => $error));
-				}
-		}	
-			
 		// return normal view search form
 
 		return [
@@ -484,8 +510,8 @@ class SiteController
 			'posts'				=> [], 
 			'searchword'		=>  $searchword,
 			'results'			=>  &$results,
-			'origkeyword'		=>  $this->origkeyword,
-			'error'				=>  $error,
+			'origkeyword'		=>  $searchword,
+			'error'				=>  $msg_error,
 			'total'				=>  $total,
 			'lists'				=>	&$lists,
 			'searchareas'		=>	$areas,
@@ -509,8 +535,6 @@ class SiteController
                 throw new Exception(__('Invalid token. Please try again.'));
 				            return App::redirect('@search/site');
             }
-
-		
 		
 		// slashes cause errors, <> get stripped anyway later on. # causes problems.
 		$badchars = array('#', '>', '<', '\\'); //$search['searchword']
@@ -550,6 +574,7 @@ class SiteController
 		
 		unset($post['task']);
 		unset($post['submit']);
+		//$post['submit'] = true;
 		//unset($post['csrf']);
 		
 		return App::redirect('@search/site', $post);
@@ -613,17 +638,17 @@ class SiteController
 				$keyword = preg_replace('#\xE3\x80\x80#s', ' ', $keyword);
 			}
 
-			$this->keyword = $keyword;
+			$this->_keyword = $keyword;
 		}
 
 		if (isset($match))
 		{
-			$this->match = $match;
+			$this->_match = $match;
 		}
 
 		if (isset($ordering))
 		{
-			$this->ordering = $ordering;
+			$this->_ordering = $ordering;
 		}
 	}
 	
@@ -681,7 +706,7 @@ class SiteController
 		if (empty($this->_data))
 		{
 			$areas = $this->getAreas();
-			$results = App::trigger(new SearchEvent('search.onContentSearch', array	($this->keyword, $this->match, $this->ordering, $areas['active'])))->getSearchData();
+			$results = App::trigger(new SearchEvent('search.onContentSearch', array	($this->_keyword, $this->_match, $this->_ordering, $areas['active'])))->getSearchData();
 			
 			$rows = array();
 			foreach ($results as $result)
@@ -757,4 +782,5 @@ class SiteController
     	}
     	return null;
     }
+
 }

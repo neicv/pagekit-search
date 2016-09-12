@@ -29,11 +29,17 @@ return [
 	'routes' => [
 
         '/search' => [
-            'name' => '@search/admin',
+            'name' => '@search',
             'controller' => [
 			'Friendlyit\\Search\\Controller\\SearchController'
 			]
         ],
+		'/api/search' => [
+            'name' => '@search/api',
+            'controller' => [
+                'Friendlyit\\Search\\Controller\\StatisticsApiController',
+            ]
+        ]
     ],
 	
 	'widgets' => [
@@ -45,7 +51,8 @@ return [
 	
 	'resources' => [
 
-		'friendlyit/search:' => ''
+		'friendlyit/search:' => '',
+		'views:friendlyit/search' => 'views'
 
 	],
 
@@ -65,6 +72,10 @@ return [
             'show_title'             => true
 
         ],
+		'advanced' => [
+
+            'statistics_enabled'       => false,
+        ],
     ],
 
     'menu' => [
@@ -72,21 +83,21 @@ return [
         'search' => [
             'label'  => 'Search',
             'icon'   => 'friendlyit/search:icon.svg',
-            'url'    => '@search/admin',
-            'active' => '@search*',
+            'url'    => '@search/statistics',
+            'active' => '@search/statistics*',
             //'access' => 'search: see search'
         ],
-		'search: panel' => [
+		'search: statistics' => [
             'parent' => 'search',
-            'label' => 'Search',
+            'label' => 'Statistics',
             'icon' => 'friendlyit/search:icon.svg',
-            'url' => '@search/admin',
+            'url' => '@search/statistics',
             'access' => 'search: manage search'
         ],
         'search: settings' => [
             'parent' => 'search',
             'label' => 'Settings',
-            'url' => '@search/admin/settings',
+            'url' => '@search/settings',
             'access' => 'system: manage settings'
         ]
     ],

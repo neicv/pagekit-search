@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"Project-Id-Version: Pagekit 1.0.5 (friendlyit/search, messages)\n"
-"POT-Creation-Date: 2016-07-09 23:23+0000\n"
+"Project-Id-Version: Pagekit 1.0.8 (friendlyit/search, messages)\n"
+"POT-Creation-Date: 2016-09-12 01:03+0300\n"
 "PO-Revision-Date: YYYY-mm-DD HH:MM+ZZZZ\n"
 "Last-Translator: NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -22,6 +22,27 @@ msgid "Min. input length before triggering autocomplete"
 msgstr ""
 
 msgid "Length search result in characters"
+msgstr ""
+
+msgid "Appearance"
+msgstr ""
+
+msgid "Use self CSS"
+msgstr ""
+
+msgid "Search keywords"
+msgstr ""
+
+msgid "Ip"
+msgstr ""
+
+msgid "Date"
+msgstr ""
+
+msgid "Count"
+msgstr ""
+
+msgid "Statistics"
 msgstr ""
 
 msgid "Search Settings"
@@ -72,7 +93,7 @@ msgstr ""
 msgid "No record found"
 msgstr ""
 
-msgid "ALL"
+msgid "All"
 msgstr ""
 
 msgid "Next"
@@ -87,25 +108,22 @@ msgstr ""
 msgid "End"
 msgstr ""
 
-msgid "All"
-msgstr ""
-
 msgid "Invalid path."
 msgstr ""
 
 msgid "Total: Nothing found."
 msgstr ""
 
-msgid "<strong>Total: %s result found.</strong>"
+msgid "Total: %s result found."
 msgstr ""
 
-msgid "<strong>Total: %s result founds.</strong>"
+msgid "Total: %s result founds."
 msgstr ""
 
-msgid "<strong>Total: %s results found.</strong>"
+msgid "Total: %s results found."
 msgstr ""
 
-msgid "<strong>Total: One result found.</strong>"
+msgid "Total: One result found."
 msgstr ""
 
 msgid "Articles"
@@ -123,6 +141,33 @@ msgstr ""
 msgid "Uncategorised"
 msgstr ""
 
+msgid "Summary"
+msgstr ""
+
+msgid "Database size:"
+msgstr ""
+
+msgid "Today"
+msgstr ""
+
+msgid "Yesterday"
+msgstr ""
+
+msgid "Week"
+msgstr ""
+
+msgid "Month"
+msgstr ""
+
+msgid "Year"
+msgstr ""
+
+msgid "No records found."
+msgstr ""
+
+msgid "{0} %count% Records|{1} %count% Record|]1,Inf[ %count% Records"
+msgstr ""
+
 msgid "General"
 msgstr ""
 
@@ -130,9 +175,6 @@ msgid "Additional"
 msgstr ""
 
 msgid "Save"
-msgstr ""
-
-msgid "Default name"
 msgstr ""
 
 msgid "Limit search result"
@@ -168,13 +210,43 @@ msgstr ""
 msgid "Enable Markdown"
 msgstr ""
 
-msgid "Require e-mail."
+msgid "Search Statistics"
 msgstr ""
 
-msgid "Close comments on articles older than"
+msgid "Enable Search Statistics"
 msgstr ""
 
-msgid "days."
+msgid "Clear Statistics"
+msgstr ""
+
+msgid "Delete Search Statistics? Are you sure ?"
+msgstr ""
+
+msgid "Cancel"
+msgstr ""
+
+msgid "Clear"
+msgstr ""
+
+msgid "Select Interval of Time to Clear Search Statistics"
+msgstr ""
+
+msgid "Clear all"
+msgstr ""
+
+msgid "Older, than a yesterday"
+msgstr ""
+
+msgid "Older, than a week"
+msgstr ""
+
+msgid "Older, than a month"
+msgstr ""
+
+msgid "Older, than a 6 months"
+msgstr ""
+
+msgid "Older, than a year"
 msgstr ""
 
 msgid "Search Keyword: "

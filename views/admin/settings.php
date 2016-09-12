@@ -1,4 +1,4 @@
-<?php $view->script('settings', 'friendlyit/search:app/bundle/settings.js', ['vue', 'jquery']) ?>
+<?php $view->script('settings', 'friendlyit/search:app/bundle/settings.js', ['vue', 'jquery']) ?> <!--, 'jquery'-->
 
 <div id="settings" class="uk-form uk-form-horizontal" v-cloak>
 
@@ -9,7 +9,7 @@
 
                 <ul class="uk-nav uk-nav-side pk-nav-large" data-uk-tab="{ connect: '#tab-content' }">
                     <li><a><i class="pk-icon-large-settings uk-margin-right"></i> {{ 'General' | trans }}</a></li>
-                    <li><a><i class="pk-icon-large-comment uk-icon-small uk-margin-right"></i> {{ 'Additional' | trans }}</a></li>
+                    <li><a><i class="pk-icon-large-comment uk-margin-right"></i> {{ 'Additional' | trans }}</a></li>
                 </ul>
 
             </div>
@@ -65,7 +65,6 @@
 									</select>
 								</p>
 							</div>
-						</label>
 					</div>
 				
 					<div class="uk-form-row">
@@ -120,9 +119,14 @@
                     </div>
 
                     <div class="uk-form-row">
-                        <span class="uk-form-label">{{ 'Additional' | trans }}</span>
+                        <span class="uk-form-label">{{ 'Search Statistics' | trans }}</span>
                         <div class="uk-form-controls uk-form-controls-text">
-
+							<p class="uk-form-controls-condensed">
+								<label><input type="checkbox" v-model="config.advanced.statistics_enabled"> {{ 'Enable Search Statistics'| trans }}</label>
+                            </p>
+				            <p>
+								<button class="uk-button uk-button-primary" type="button" href="#" data-uk-tooltip title="{delay:200}" :title="'Clear Statistics BD'| trans"  @click.prevent="$refs.modal.open()" v-show="'1' == config.advanced.statistics_enabled">{{ 'Clear Statistics' | trans }}</button>
+							</p>
                         </div>
                     </div>
 
@@ -132,5 +136,47 @@
         </div>
     </div>
 
+	<v-modal v-ref:modal>
+        <form class="uk-form-stacked">
+
+            <div class="uk-modal-header">
+                <h2>{{ 'Select Interval of Time to Clear Search Statistics' | trans }}</h2>
+            </div>
+
+            <div class="uk-form-row">
+			    <p class="uk-form-controls-condensed">
+                    <label><input type="radio" v-model="interval"  value="all"> {{ 'Clear all' | trans }}</label>
+                </p>
+			
+                <p class="uk-form-controls-condensed">
+                    <label><input type="radio" v-model="interval"  value="yesterday"> {{ 'Older, than a yesterday' | trans }}</label>
+                </p>
+				
+				<p class="uk-form-controls-condensed">
+                    <label><input type="radio" v-model="interval" value="week"> {{ 'Older, than a week' | trans }}</label>
+                </p>
+			
+                <p class="uk-form-controls-condensed">
+                    <label><input type="radio" v-model="interval" value="month"> {{ 'Older, than a month' | trans }}</label>
+                </p>
+				
+				<p class="uk-form-controls-condensed">
+                    <label><input type="radio" v-model="interval" value="6month"> {{ 'Older, than a 6 months' | trans }}</label>
+                </p>
+				
+				<p class="uk-form-controls-condensed">
+                    <label><input type="radio" v-model="interval" value="year" checked="checked"> {{ 'Older, than a year' | trans }}</label>
+                </p>
+            </div>
+
+            <div class="uk-modal-footer uk-text-right">
+                <button class="uk-button uk-button-link uk-modal-close" type="button" autofocus>{{ 'Cancel' | trans }}</button>
+                <button class="uk-button uk-button-link" @click.prevent="clear">{{ 'Clear' | trans }}</button>
+            </div>
+
+        </form>
+    </v-modal>
+	
 </div>
 
+    

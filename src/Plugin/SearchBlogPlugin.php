@@ -12,17 +12,12 @@ namespace Friendlyit\Search\Plugin;
 use Friendlyit\Search\Helpers\EXSearchHelper;
 use Friendlyit\Search\Event\SearchEvent;
 
-
 use Pagekit\Blog\Model\Post;
 use Pagekit\Blog\Model\Comment;
 
-
 use Pagekit\Component\Database\ORM\Repository;
-
 use Pagekit\Event\EventSubscriberInterface;
-
 use Pagekit\Application as App;
-
 
 /**
  * Blog search plugin.
@@ -122,22 +117,26 @@ class SearchBlogPlugin implements EventSubscriberInterface
 				}
 			}
 		} 
-
+		
+		if (App::db()->getDatabasePlatform()->getName() === 'sqlite') $b_sqlite = true; else $b_sqlite = false;
+		
 		$text = trim($text);
 		if ($text == '')
 		{
 			return array();
 		}
 	
-		$text = trim($text); 
+		//$text = trim($text); 
+		$text = EXSearchHelper::strip_data(trim($text));
 		$text = stripslashes($text); 
 		$text = htmlspecialchars($text); 
+		$text = mysql_escape_string($text);
 
 		$matches = array();
 		switch ($phrase)
 		{
 			case 'exact':
-				//$text = $this['db']->quote('%' . $this['db']->escape($text, true) . '%', false);
+			
 				$words = $text;
 				$wheres2 = array();
 				$wheres2[] = 'a.title LIKE :v1';// . $words;
@@ -155,13 +154,10 @@ class SearchBlogPlugin implements EventSubscriberInterface
 				$key_index = 1;
 				foreach ($words as $word)
 				{
-					//Upper($word);
-					//$word = $this['db']->quote('%' . $this['db']->getEscaped($word, true) . '%', false);
 					$wheres2 = array();
-					$wheres2[] = 'a.title LIKE :v'. $key_index;//1';// . $word;
-					//$wheres2[] = 'Upper(a.excerpt) LIKE Upper(:v'. $key_index . ')';// . $words; 
-					$wheres2[] = 'a.excerpt LIKE :v'. $key_index;// . $words; 
-					$wheres2[] = 'a.content LIKE :v'. $key_index;//1';//. $word;
+					$wheres2[] = 'a.title LIKE :v'. $key_index;
+					$wheres2[] = 'a.excerpt LIKE :v'. $key_index;
+					$wheres2[] = 'a.content LIKE :v'. $key_index;
 					$wheres[] = implode(' OR ', $wheres2);
 					$matches['v' .$key_index] = "%{$word}%";
 					++$key_index;
@@ -173,7 +169,7 @@ class SearchBlogPlugin implements EventSubscriberInterface
 		switch ($ordering)
 		{
 			case 'oldest':
-				$order = 'date, ASC';//"'a.created ASC'";
+				$order = 'date, ASC';
 				break;
 
 			case 'popular':
@@ -181,16 +177,16 @@ class SearchBlogPlugin implements EventSubscriberInterface
 				//break;
 
 			case 'alpha':
-				$order = 'title, ASC';//array('title'=>'ASC');
+				$order = 'title, ASC';
 				break;
 
 			case 'category':
-				$order = 'title, ASC'; //array('title'=>'ASC'); //$order = 'c.title ASC, a.title ASC';
+				$order = 'title, ASC'; 
 				break;
 
 			case 'newest':
 			default:
-				$order = 'date, DESC'; //array('title'=>'DESC');// DESC
+				$order = 'date, DESC'; 
 				break;
 		}
 
@@ -203,11 +199,14 @@ class SearchBlogPlugin implements EventSubscriberInterface
 
 		// -----  "PDO" -----
 		
+		if (!$b_sqlite) $concatestr = 'CONCAT (a.excerpt, a.content) AS text';
+		else $concatestr = ' (a.excerpt || a.content) AS text';
+		
 		$query = App::db()->createQueryBuilder()
 			->from('@blog_post a')
 		
 			->select('a.title title, a.id id, a.date date')
-			->select($this->concatenate(array('a.excerpt', 'a.content')) . ' text')
+			->select($concatestr)
 			->where( $where .')', $matches)
 			->groupBy('a.title', 'a.content', 'a.excerpt');
 			
@@ -396,57 +395,7 @@ class SearchBlogPlugin implements EventSubscriberInterface
 
     }
 	
-	public function quote($text, $escape = true)
-	{
-		if (is_array($text))
-		{
-			foreach ($text as $k => $v)
-			{
-				$text[$k] = $this->quote($v, $escape);
-			}
-
-			return $text;
-		}
-		else
-		{
-			return '\'' . ($escape ? $this->escape($text) : $text) . '\'';
-		}
-	}
-
-	// Query
-	public function concatenateQuery($values, $separator = null)
-	{
-		if ($separator)
-		{
-			return 'CONCAT(' . implode(' || ' . $this->quote($separator) . ' || ', $values) . ')';
-		}
-		else
-		{
-			return 'CONCAT(' . implode(' || ', $values) . ')';
-		}
-	} 
-	
-	// MySql
-	public function concatenate($values, $separator = null)
-	{
-		if ($separator)
-		{
-			$concat_string = 'CONCAT_WS(' . $this->quote($separator);
-
-			foreach ($values as $value)
-			{
-				$concat_string .= ', ' . $value;
-			}
-
-			return $concat_string . ')';
-		}
-		else
-		{
-			return 'CONCAT(' . implode(',', $values) . ')';
-		}
-	}
-	
-	public function has_same_id($id, $r_array)
+	private function has_same_id($id, $r_array)
 	{
 		foreach ($r_array as $row)
 		{
@@ -454,4 +403,5 @@ class SearchBlogPlugin implements EventSubscriberInterface
 		}
 	return false;
 	}
+
 }

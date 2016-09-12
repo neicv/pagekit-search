@@ -591,7 +591,7 @@ class ru_RULocalise extends EXSearchHelper
 	 */
 	public static function getUpperLimitSearchWord()
 	{
-		return 20;
+		return 128;
 	}
 
 	/**

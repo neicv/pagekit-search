@@ -1,14 +1,15 @@
-/* ========================================================================
-   Component: Search
- ========================================================================== */ 
- .tm-search {
-  position: fixed;
-  top: 85px;
-  right: 0;
-  z-index: 981;
-  border-radius: 3px 0 0 3px;
-  background: #f5f6fa;
+/* SVG Icons
+ ========================================================================== */
+
+[class*='fi-icon-'] {
+    display: inline-block;
+    width: 25px;
+    height: 25px;
+    background-repeat: no-repeat;
+    background-position: 50% 50%;
+    vertical-align: middle;
 }
-.tm-navbar-center .tm-search {
-  top: 65px;
-}
+
+.fi-icon-large-bars { background-image: url("../svg/icon-large-bars.svg"); }
+.fi-icon-large-bar-chart { background-image: url("../svg/icon-large-bar-chart.svg"); }
+

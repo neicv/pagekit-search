@@ -12,6 +12,7 @@ namespace Friendlyit\Search\Helpers;
 
 use Friendlyit\Search\Helpers\EXTransliterate;
 use Friendlyit\Search\Helpers\EXDefaultLocalise;
+use Friendlyit\Search\Model\SearchKeywords;
 use Pagekit\Application as App; 
 
 /**
@@ -20,7 +21,8 @@ use Pagekit\Application as App;
  * @since  0.1
  */
 
-
+ 
+ 
 class EXSearchHelper
 {
 	
@@ -31,6 +33,11 @@ class EXSearchHelper
 	 * @since  0.1
 	 */
 	protected 	$external_lang = true;
+	
+	/**
+     * @var Default Time Zone
+    */
+	//protected 	$defaultTimeZone='UTC';
 	
 	 /**
      * @var Patch to dir w Language
@@ -47,6 +54,8 @@ class EXSearchHelper
 	public function __construct()
     {
 
+		//if(date_default_timezone_get()!=$defaultTimeZone) date_default_timezone_set($defaultTimeZone);
+		
 		$lang = App::module('system')->config('site.locale');
 
 		if (!$dir = $this->getPath()) {
@@ -94,21 +103,6 @@ class EXSearchHelper
     {
          return new self();
     }
-
-	
-	/**
-	 * Configure the Linkbar.
-	 *
-	 * @param   string  $vName  The name of the active view.
-	 *
-	 * @return  void
-	 *
-	 * @since   1.6
-	 */
-	public static function addSubmenu($vName)
-	{
-		// Not required.
-	}
 
 	/**
 	 * Sanitise search word.
@@ -191,22 +185,6 @@ class EXSearchHelper
 		}
 
 		return $restriction;
-	}
-
-	/**
-	 * Logs a search term.
-	 *
-	 * @param   string  $search_term  The term being searched.
-	 *
-	 * @return  void
-	 *
-	 * @since   0.1
-	 */
-	 
-	public static function logSearch($search_term)
-	{
-
-		/*JSearchHelper::logSearch($search_term, 'com_search'); */
 	}
 
 	/**
@@ -377,13 +355,13 @@ class EXSearchHelper
 		return $AddHelper::getLowerLimitSearchWord();
 	}
 	
-		/**
-	 * Returns the upper length limit of search words
-	 *
-	 * @return  integer  The upper length limit of search words.
-	 *
-	 * @since   0.1
-	 */
+	/**
+	* Returns the upper length limit of search words
+	*
+	* @return  integer  The upper length limit of search words.
+	*
+	* @since   0.1
+	*/
 	public static function getUpperLimitSearchWord()
 	{
 		$AddHelper = self::$nameClass;
@@ -463,5 +441,80 @@ class EXSearchHelper
 		}
 	
 		return $prefix . implode('/', $tokens);
+	}
+	
+	/**
+	* Normalizes the given date 
+	*
+	* @param  string $format
+	* @param  string $timestamp
+	* @param  string $timezone
+	* @return date
+	*/
+	public function _date($format="r", $timestamp=false, $timezone=false)
+	{
+		$userTimezone = new \DateTimeZone(!empty($timezone) ? $timezone : 'GMT');
+		$gmtTimezone = new \DateTimeZone('GMT');
+		$myDateTime = new \DateTime(($timestamp!=false?date("r",(int)$timestamp):date("r")), $gmtTimezone);
+		$offset = $userTimezone->getOffset($myDateTime);
+		return date($format, ($timestamp!=false?(int)$timestamp:$myDateTime->format('U')) + $offset);
+	}
+	/* Example */
+	//echo 'System Date/Time: '.date("Y-m-d | h:i:sa").'<br>';
+	//echo 'New York Date/Time: '._date("Y-m-d | h:i:sa", false, 'America/New_York').'<br>';
+	//echo 'Belgrade Date/Time: '._date("Y-m-d | h:i:sa", false, 'Europe/Belgrade').'<br>';
+	//echo 'Belgrade Date/Time: '._date("Y-m-d | h:i:sa", 514640700, 'Europe/Belgrade').'<br>';
+	//echo 'Belgrade Date/Time: '._date("Y-m-d H:i:s", false, $localTimeZone);
+	
+	/**
+	 * Logs a search term.
+	 *
+	 * @param   string  $search_term  The term being searched.
+	 *
+	 * @return  void
+	 *
+	 * @since   0.1
+	 */
+	
+	public static function logSearch($search_term = null)
+	{
+
+		if (!is_null($search_term)){
+			$SearchKeywords = SearchKeywords::create();
+			$SearchKeywords->ip = ip2long(App::request()->getClientIp());
+			//$SearchKeywords->putdate = EXSearchHelper::_date($putdate);
+			$SearchKeywords->putdate = new \DateTime;
+		
+			$search_term = EXSearchHelper::strip_data(trim(mb_strtolower($search_term)));
+			$search_term = stripslashes($search_term); 
+			$search_term = htmlspecialchars($search_term);
+			$search_term = mysql_escape_string($search_term);
+			$SearchKeywords->word = $search_term;
+			$SearchKeywords->save();
+			return true;
+		}
+		return false;
+	}
+	
+	/**
+	* Method to escape a string for usage in an Search request.
+	*
+	* @param   string   $text   The string to be escaped.
+	*
+	* @return  string  The escaped string.
+	*
+	* @since   0.1
+	*/
+	
+	public static function strip_data($text)
+	{
+		$quotes = array ("\x27", "\x22", "\x60", "\t", "\n", "\r", "*", "%", "<", ">", "?", "!" );
+		$goodquotes = array ("-", "+", "#" );
+		$repquotes = array ("\-", "\+", "\#" );
+		$text = trim( strip_tags( $text ) );
+		$text = str_replace( $quotes, '', $text );
+		$text = str_replace( $goodquotes, $repquotes, $text );
+		$text = ereg_replace(" +", " ", $text);
+		return $text;
 	}
 }
