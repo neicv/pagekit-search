@@ -506,6 +506,8 @@ class SiteController
 			'$view' => [
 				'title'		 => __('Search'),
 				'name' => 'friendlyit/search:views/form/placeholder.php',
+				//'name' => 'search:views/form/placeholder.php',
+				'name' => 'friendlyit/search/form/placeholder.php',
 				],
 			'posts'				=> [], 
 			'searchword'		=>  $searchword,

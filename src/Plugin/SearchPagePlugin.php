@@ -104,33 +104,29 @@ class SearchPagePlugin implements EventSubscriberInterface
 			}
 		} 
 
-		//$text = trim($text); 
-		$text = EXSearchHelper::strip_data(trim($text));
-		$text = stripslashes($text); 
-		$text = htmlspecialchars($text); 
-		$text = mysql_escape_string($text);
-		
+		$text = trim($text);
 		if ($text == '')
 		{
 			return array();
 		}
 		
+		$text = EXSearchHelper::strip_data(trim($text));
+		$text = stripslashes($text); 
+		$text = htmlspecialchars($text); 
+
 		if (App::db()->getDatabasePlatform()->getName() === 'sqlite') $b_sqlite = true; else $b_sqlite = false;
-		//(bool)$b_sqlite = (App::db()->getDatabasePlatform()->getName() === 'sqlite') ?  false :  true;
-		//$dbname = App::db()->getDatabasePlatform()->getName();
-		
-		
+	
 		
 		$matches = array();
 		switch ($phrase)
 		{
 			case 'exact':
-				$words = $text;
+				
+				$text =App::db()->quote('%' . $text . '%', false);
 				$wheres2 = array();
-				$wheres2[] = 'a.title LIKE :v1';
-				$wheres2[] = 'a.content LIKE :v1';
+				$wheres2[] = 'a.title LIKE '.$text;
+				$wheres2[] = 'a.content LIKE '. $text;
 				$where = '(' . implode(') OR (', $wheres2) . ')';
-				$matches['v1'] = "%{$text}%"; 
 				break;
 
 			case 'all':
@@ -138,15 +134,13 @@ class SearchPagePlugin implements EventSubscriberInterface
 			default:
 				$words = explode(' ', $text);
 				$wheres = array();
-				$key_index = 1;
 				foreach ($words as $word)
 				{
+					$word = App::db()->quote('%' . $word . '%', false);
 					$wheres2 = array();
-					$wheres2[] = 'a.title LIKE :v'. $key_index;
-					$wheres2[] = 'a.content LIKE :v'. $key_index;
+					$wheres2[] = 'a.title LIKE '.$word;
+					$wheres2[] = 'a.content LIKE '.$word;
 					$wheres[] = implode(' OR ', $wheres2);
-					$matches['v' .$key_index] = "%{$word}%";
-					++$key_index;
 				}
 
 				$where = '(' . implode(($phrase == 'all' ? ') AND (' : ') OR ('), $wheres) . ')';

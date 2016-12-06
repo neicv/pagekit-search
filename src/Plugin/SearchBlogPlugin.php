@@ -126,24 +126,22 @@ class SearchBlogPlugin implements EventSubscriberInterface
 			return array();
 		}
 	
-		//$text = trim($text); 
 		$text = EXSearchHelper::strip_data(trim($text));
 		$text = stripslashes($text); 
 		$text = htmlspecialchars($text); 
-		$text = mysql_escape_string($text);
+
 
 		$matches = array();
 		switch ($phrase)
 		{
 			case 'exact':
-			
-				$words = $text;
+				
+				$word  =App::db()->quote('%' . $text . '%', false);
 				$wheres2 = array();
-				$wheres2[] = 'a.title LIKE :v1';// . $words;
-				$wheres2[] = 'a.excerpt LIKE :v1';// . $words; 
-				$wheres2[] = 'a.content LIKE :v1';// . $words;
+				$wheres2[] = 'a.title LIKE '	. $word;
+				$wheres2[] = 'a.excerpt LIKE '	. $word;
+				$wheres2[] = 'a.content LIKE '	. $word;
 				$where = '(' . implode(') OR (', $wheres2) . ')';
-				$matches['v1'] = "%{$text}%"; 
 				break;
 
 			case 'all':
@@ -151,16 +149,14 @@ class SearchBlogPlugin implements EventSubscriberInterface
 			default:
 				$words = explode(' ', $text);
 				$wheres = array();
-				$key_index = 1;
 				foreach ($words as $word)
 				{
+					$word = App::db()->quote('%' . $word . '%', false);
 					$wheres2 = array();
-					$wheres2[] = 'a.title LIKE :v'. $key_index;
-					$wheres2[] = 'a.excerpt LIKE :v'. $key_index;
-					$wheres2[] = 'a.content LIKE :v'. $key_index;
+					$wheres2[] = 'a.title LIKE '	. $word;
+					$wheres2[] = 'a.excerpt LIKE '	. $word;
+					$wheres2[] = 'a.content LIKE '	. $word;
 					$wheres[] = implode(' OR ', $wheres2);
-					$matches['v' .$key_index] = "%{$word}%";
-					++$key_index;
 				}
 				$where = '(' . implode(($phrase == 'all' ? ') AND (' : ') OR ('), $wheres) . ')';
 				break;
@@ -261,11 +257,10 @@ class SearchBlogPlugin implements EventSubscriberInterface
 			switch ($phrase)
 			{
 				case 'exact':
-					$words = $text;
+					$word  = App::db()->quote('%' . $text . '%', false);
 					$wheres2 = array();
-					$wheres2[] = 'content LIKE :v1';
+					$wheres2[] = 'content LIKE '. $word;
 					$where = '(' . implode(') OR (', $wheres2) . ')';
-					$matches['v1'] = "%{$text}%"; 
 					break;
 
 				case 'all':
@@ -273,14 +268,12 @@ class SearchBlogPlugin implements EventSubscriberInterface
 				default:
 					$words = explode(' ', $text);
 					$wheres = array();
-					$key_index = 1;
 					foreach ($words as $word)
 					{
 						$wheres2 = array();
-						$wheres2[] = 'content LIKE :v'. $key_index;//1';//. $word;
+						$word = App::db()->quote('%' . $word . '%', false);
+						$wheres2[] = 'content LIKE '. $word;
 						$wheres[] = implode(' OR ', $wheres2);
-						$matches['v' .$key_index] = "%{$word}%";
-						++$key_index;
 					}
 					$where = '(' . implode(($phrase == 'all' ? ') AND (' : ') OR ('), $wheres) . ')';
 					break;

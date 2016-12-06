@@ -488,7 +488,8 @@ class EXSearchHelper
 			$search_term = EXSearchHelper::strip_data(trim(mb_strtolower($search_term)));
 			$search_term = stripslashes($search_term); 
 			$search_term = htmlspecialchars($search_term);
-			$search_term = mysql_escape_string($search_term);
+			//$search_term =  App::db()->quote($search_term);
+			//$search_term = mysql_escape_string($search_term);
 			$SearchKeywords->word = $search_term;
 			$SearchKeywords->save();
 			return true;
@@ -514,7 +515,8 @@ class EXSearchHelper
 		$text = trim( strip_tags( $text ) );
 		$text = str_replace( $quotes, '', $text );
 		$text = str_replace( $goodquotes, $repquotes, $text );
-		$text = ereg_replace(" +", " ", $text);
+		//$text = ereg_replace(" +", " ", $text);
+		$text = str_replace(" +", " ", $text);
 		return $text;
 	}
 }

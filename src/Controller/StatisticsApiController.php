@@ -67,7 +67,7 @@ class StatisticsApiController
 		//$skip_date = !preg_match("/[^0-9_ :-]/",$search);// " Date  == true" ;
 		$search = stripslashes($search);
 		$search = htmlspecialchars($search);
-		$search = mysql_escape_string($search);
+		//$search = mysql_escape_string($search);
 		
 
 		if ($view == 'all')

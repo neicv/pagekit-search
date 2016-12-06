@@ -125,6 +125,10 @@ return [
                 
             );
         },
+		'view.scripts' => function ($event, $scripts) use ($app) {
+            $scripts->register('uikit-search', 'app/assets/uikit/js/components/search.min.js', 'uikit');
+            $scripts->register('uikit-autocomplete', 'app/assets/uikit/js/components/autocomplete.min.js', 'uikit');
+        }
 
     ]
 
