@@ -348,7 +348,7 @@ class SiteController
 						$item          = array();
 						$item['title'] = '<div class="uk-text-bold">'. $res->title . '</div>';
 						$item['text']  = substr_replace($text, '...', strrpos($text, ' '));
-						$item['url']   = App::url($res->href);
+						$item['url']   = $res->href;//App::url($res->href);
 						$res_items[]   = $item;
 						
 					}
