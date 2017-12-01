@@ -382,8 +382,8 @@ class SearchBlogPlugin implements EventSubscriberInterface
     public function subscribe()
     {
         return [
-			'search.onContentSearchAreas'	=> ['onContentSearchAreas', 5],
-			'search.onContentSearch'		=> ['onContentSearch', 5]
+			'search.onContentSearchAreas'	=> ['onContentSearchAreas', 6],
+			'search.onContentSearch'		=> ['onContentSearch', 6]
         ];
 
     }

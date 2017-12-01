@@ -1,7 +1,7 @@
 /* ========================================================================
    Component: Search
  ========================================================================== */ 
- .tm-search {
+ .fi-search {
   position: fixed;
   top: 85px;
   right: 0;
@@ -9,6 +9,6 @@
   border-radius: 3px 0 0 3px;
   background: #f5f6fa;
 }
-.tm-navbar-center .tm-search {
+.tm-navbar-right .fi-search {
   top: 65px;
 }

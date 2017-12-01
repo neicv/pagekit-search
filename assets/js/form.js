@@ -1,5 +1,5 @@
 // form ajax saving
-$(document).ready(function(){   
+/* $(document).ready(function(){   
 $('#search-form').on('submit', function(e) {
 
     e.preventDefault();
@@ -20,4 +20,4 @@ $('#search-form').on('submit', function(e) {
 		});
 	});	
 
-});	
+});	 */

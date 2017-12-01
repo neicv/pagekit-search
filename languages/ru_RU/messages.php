@@ -1,4 +1,4 @@
-<?php return array (
+﻿<?php return array (
   'Title' => 'Заголовок',
   'Title cannot be blank.' => 'Заголовок не может быть пустым.',
   'Number of search results' => 'Количество результатов поиска.',
@@ -29,6 +29,7 @@
   'Total: Nothing found.' => 'Результат поиска: ничего не найдено.',
   'Total: %s result found.' => 'Результат поиска: найден %s объект.',
   'Total: %s results found.' => 'Результат поиска: найдено %s объектов.',
+  'Total: %s result founds.' => 'Результат поиска: найдено %s объекта',
   'Total: One result found.' => 'Результат поиска: найден один объект.',
   'Blog' => 'Блог',
   'Blog comments' => 'Комментарии',

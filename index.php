@@ -3,7 +3,9 @@
 use Friendlyit\Search\Plugin\SearchContentPlugin;
 use Friendlyit\Search\Plugin\SearchPagePlugin;
 use Friendlyit\Search\Plugin\SearchBlogPlugin;
-
+use Friendlyit\Search\Plugin\SearchDrivenListingsPlugin;
+use Pagekit\Application as App;
+	
 return [
 
     'name' => 'friendlyit/search',
@@ -117,14 +119,40 @@ return [
 	 
 	'events' => [
 
-        'boot' => function ($event, $app) {
+/*        'boot' => function ($event, $app) {
             $app->subscribe(
                 //new SearchContentPlugin,
                 new SearchPagePlugin,
 				new SearchBlogPlugin
                 
             );
-        },
+        },  */
+		
+		
+		'boot' => function ($event, $app) {
+			if (App::module('blog')) {
+            $app->subscribe(
+
+                new SearchBlogPlugin
+                
+            );
+			}
+			
+			if (App::module('driven/listings')) {
+            $app->subscribe(
+
+                new SearchDrivenListingsPlugin
+                
+            );
+			}
+			
+			$app->subscribe(
+			new SearchPagePlugin
+			);
+        }, 
+		
+		
+		
 		'view.scripts' => function ($event, $scripts) use ($app) {
             $scripts->register('uikit-search', 'app/assets/uikit/js/components/search.min.js', 'uikit');
             $scripts->register('uikit-autocomplete', 'app/assets/uikit/js/components/autocomplete.min.js', 'uikit');

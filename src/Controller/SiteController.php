@@ -348,7 +348,7 @@ class SiteController
 						$item          = array();
 						$item['title'] = '<div class="uk-text-bold">'. $res->title . '</div>';
 						$item['text']  = substr_replace($text, '...', strrpos($text, ' '));
-						$item['url']   = App::url($res->href);
+						$item['url']   = $res->href;
 						$res_items[]   = $item;
 						
 					}
@@ -364,93 +364,79 @@ class SiteController
 			{	
 				$lists['searchkeywordnresult'] = $this->exsearchhelper->getPluralSearchKeywordNResult($total); 
 
-				for ($i = 0, $count = count($results); $i < $count; $i++)
+
+					
+				$hl1            = '<span class="uk-text-bold uk-text-success">'; //'<span class="highlight">';
+				$hl2            = '</span>';
+				$mbString       = extension_loaded('mbstring');
+				$highlighterLen = strlen($hl1 . $hl2);
+
+				if ($match === 'exact')
 				{
-					$row = & $results[$i]->text;
-					
-					if ($match == 'exact')
-					{
-						$searchwords = array($searchword);
-						$needle      = $searchword;
-					}
-					else
-					{
-						$searchworda = preg_replace('#\xE3\x80\x80#s', ' ', $searchword);
-						$searchwords = preg_split("/\s+/u", $searchworda);
-						$needle      = $searchwords[0];
-					}
-					
+					$searchWords = array($searchword);
+					$needle      = $searchword;
+				}
+				else
+				{
+					$searchWordA = preg_replace('#\xE3\x80\x80#', ' ', $searchword);
+					$searchWords = preg_split("/\s+/u", $searchWordA);
+					$needle      = $searchWords[0];
+				}
+					for ($i = 0, $count = count($results); $i < $count; ++$i)
+				{
+					$row = &$results[$i]->text;
+
+					// Doing HTML entity decoding here, just in case we get any HTML entities here.
+					$quoteStyle   = version_compare(PHP_VERSION, '5.4', '>=') ? ENT_NOQUOTES | ENT_HTML401 : ENT_NOQUOTES;
+					$row          = html_entity_decode($row, $quoteStyle, 'UTF-8');
 					$row          = EXSearchHelper::prepareSearchContent($row, $needle);
-					$searchwords  = array_values(array_unique($searchwords));
-					$srow         = mb_strtolower(EXSearchHelper::remove_accents($row), 'UTF-8');  // !!!!!!!!!!!!!!!!!!!!!!!!
-					$hl1          = '<span class="uk-text-bold uk-text-success">';// uk-text-primary">';//= '<span class="highlight">';
-					$hl2          = '</span>';
+					$searchWords  = array_values(array_unique($searchWords));
+					$lowerCaseRow = $mbString ? mb_strtolower($row) : strtolower($row);
+
+					$transliteratedLowerCaseRow = EXSearchHelper::remove_accents($lowerCaseRow);
+
 					$posCollector = array();
-					$mbString     = extension_loaded('mbstring');  // !!!
-					
-					if ($mbString)
+
+					foreach ($searchWords as $highlightWord)
 					{
-						// E.g. german umlauts like Г¤ are converted to ae and so
-						// $pos calculated with $srow doesn't match for $row
-						$correctPos     = (mb_strlen($srow) > mb_strlen($row));
-						$highlighterLen = mb_strlen($hl1 . $hl2);
-						
-					}
-					else
-					{
-						// E.g. german umlauts like Г¤ are converted to ae and so
-						// $pos calculated with $srow desn't match for $row
-						$correctPos     = (strlen($srow) > strlen($row));
-						$highlighterLen = strlen($hl1 . $hl2);
-					}
-					
-					foreach ($searchwords as $hlword)
-					{
+						$found = false;
+
 						if ($mbString)
 						{
-							if (($pos = mb_strpos($srow, mb_strtolower(EXSearchHelper::remove_accents($hlword), 'UTF-8'))) !== false) // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+							$lowerCaseHighlightWord = mb_strtolower($highlightWord);
+
+							if (($pos = mb_strpos($lowerCaseRow, $lowerCaseHighlightWord)) !== false)
 							{
-								// Iconv transliterates 'в‚¬' to 'EUR'
-								// TODO: add other expanding translations?
-								$eur_compensation = $pos > 0 ? substr_count($row, "\xE2\x82\xAC", 0, $pos) * 2 : 0;
-								$pos              -= $eur_compensation;
-
-								if ($correctPos)
-								{
-									// Calculate necessary corrections from 0 to current $pos
-									$ChkRow     = mb_substr($row, 0, $pos);
-									$sChkRowLen = mb_strlen(mb_strtolower(EXSearchHelper::remove_accents($ChkRow), 'UTF-8'));
-									$ChkRowLen  = mb_strlen($ChkRow);
-									// correct $pos
-									$pos -= ($sChkRowLen - $ChkRowLen);
-								}
-
-								// Collect pos and searchword
-								$posCollector[$pos] = $hlword;
+								$found = true;
+							}
+							elseif (($pos = mb_strpos($transliteratedLowerCaseRow, $lowerCaseHighlightWord)) !== false)
+							{
+								$found = true;
 							}
 						}
 						else
 						{
-							if (($pos =strpos($srow, strtolower(EXSearchHelper::remove_accents($hlword)))) !== false)
+							$lowerCaseHighlightWord = strtolower($highlightWord);
+
+							if (($pos = strpos($lowerCaseRow, $lowerCaseHighlightWord)) !== false)
 							{
-								// iconv transliterates 'в‚¬' to 'EUR'
-								// TODO: add other expanding translations?
-								$eur_compensation = $pos > 0 ? substr_count($row, "\xE2\x82\xAC", 0, $pos) * 2 : 0;
-								$pos              -= $eur_compensation;
-
-								if ($correctPos)
-								{
-									// Calculate necessary corrections from 0 to current $pos
-									$ChkRow     = substr($row, 0, $pos);
-									$sChkRowLen = strlen(strtolower(EXSearchHelper::remove_accents($ChkRow)));
-									$ChkRowLen  = strlen($ChkRow);
-									// Correct $pos
-									$pos -= ($sChkRowLen - $ChkRowLen);
-								}
-
-								// Collect pos and searchword
-								$posCollector[$pos] = $hlword;
+								$found = true;
 							}
+							elseif (($pos = strpos($transliteratedLowerCaseRow, $lowerCaseHighlightWord)) !== false)
+							{
+								$found = true;
+							}
+						}
+
+						if ($found === true)
+						{
+							// Iconv transliterates '€' to 'EUR'
+							// TODO: add other expanding translations?
+							$eur_compensation = $pos > 0 ? substr_count($row, "\xE2\x82\xAC", 0, $pos) * 2 : 0;
+							$pos -= $eur_compensation;
+
+							// Collect pos and search-word
+							$posCollector[$pos] = $highlightWord;
 						}
 					}
 
@@ -461,34 +447,41 @@ class SiteController
 						$cnt                = 0;
 						$lastHighlighterEnd = -1;
 
-						foreach ($posCollector as  $pos => $hlword)
+						foreach ($posCollector as $pos => $highlightWord)
 						{
 							$pos += $cnt * $highlighterLen;
-							// Avoid overlapping/corrupted highlighter-spans
-							// TODO $chkOverlap could be used to highlight remaining part
-							// of searchword outside last highlighter-span.
-							// At the moment no additional highlighter is set.
+
+							/*
+							 * Avoid overlapping/corrupted highlighter-spans
+							 * TODO $chkOverlap could be used to highlight remaining part
+							 * of search-word outside last highlighter-span.
+							 * At the moment no additional highlighter is set.
+							 */
 							$chkOverlap = $pos - $lastHighlighterEnd;
 
 							if ($chkOverlap >= 0)
 							{
-								// Set highlighter around searchword
+								// Set highlighter around search-word
 								if ($mbString)
 								{
-									$hlwordLen = mb_strlen($hlword);
-									$row       = mb_substr($row, 0, $pos) . $hl1 . mb_substr($row, $pos, $hlwordLen) . $hl2 . mb_substr($row, $pos + $hlwordLen);
+									$highlightWordLen = mb_strlen($highlightWord);
+									$row              = mb_substr($row, 0, $pos) . $hl1 . mb_substr($row, $pos, $highlightWordLen)
+										. $hl2 . mb_substr($row, $pos + $highlightWordLen);
 								}
 								else
 								{
-									$hlwordLen = strlen($hlword);
-									$row       = substr($row, 0, $pos) . $hl1 . substr($row, $pos, strlen($hlword)) . $hl2 . substr($row, $pos + strlen($hlword));
+									$highlightWordLen = strlen($highlightWord);
+									$row              = substr($row, 0, $pos)
+										. $hl1 . substr($row, $pos, strlen($highlightWord))
+										. $hl2 . substr($row, $pos + strlen($highlightWord));
 								}
 
 								$cnt++;
-								$lastHighlighterEnd = $pos + $hlwordLen + $highlighterLen;
+								$lastHighlighterEnd = $pos + $highlightWordLen + $highlighterLen;
 							}
 						}
 					}
+					
 					$result = & $results[$i];
 
 					if (!$result->created) {$result->created = '';}
@@ -505,8 +498,8 @@ class SiteController
 		return [
 			'$view' => [
 				'title'		 => __('Search'),
-				'name' => 'friendlyit/search:views/form/placeholder.php',
-				//'name' => 'search:views/form/placeholder.php',
+				//'name' => 'friendlyit/search:views/form/placeholder.php',
+				////'name' => 'search:views/form/placeholder.php',
 				'name' => 'friendlyit/search/form/placeholder.php',
 				],
 			'posts'				=> [], 
