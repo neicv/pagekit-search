@@ -14,10 +14,19 @@ use Friendlyit\Search\Event\SearchEvent;
 
 //use Pagekit\Blog\Model\Post;
 //use Pagekit\Blog\Model\Comment;
+use Driven\Listings\Model\item;
+use Driven\Listings\Model\Listing;
+use Driven\Listings\Model\ListingCategory;
+
 
 use Pagekit\Component\Database\ORM\Repository;
+use Doctrine\DBAL\Platform\SqlitePlatform;
+//use Doctrine\DBAL\Driver\PDOConnection;
+use Doctrine\DBAL\Connection;
 use Pagekit\Event\EventSubscriberInterface;
 use Pagekit\Application as App;
+
+use PDO;
 
 /**
  * Blog search plugin.
@@ -27,6 +36,9 @@ use Pagekit\Application as App;
 class SearchDrivenListingsPlugin implements EventSubscriberInterface
 {
 	const PAGES_PER_PAGE = 50;
+
+	const STATUS_ACTIVE = 1;
+
 	/**
      * @var Repository
      */
@@ -104,12 +116,227 @@ class SearchDrivenListingsPlugin implements EventSubscriberInterface
 		$ordering	= $parameters[2];
 		$areas  	= $parameters[3]; 
 		
+		$searchText = $text;
+
+		/*if (is_array($areas))
+		{
+			if (count($areas))
+			{
+				if (!array_intersect($areas, array_keys($this->onContentSearchAreasL())))
+				{
+					$a = array();
+					$event->setSearchData($a);
+					return $a;
+				}
+			}
+		} */
+
+		if (is_array($areas) && !array_intersect($areas, array_keys($this->onContentSearchAreasL())))
+		{
+			return array();
+		}
+
 		
+		if (App::db()->getDatabasePlatform()->getName() === 'sqlite') $b_sqlite = true; else $b_sqlite = false;
+
+		$date  = new \DateTime();
+		$now   = $date;//->toSql();
+		$prefix = App::db()->getPrefix();
+		$db_name = $prefix.'listings_item'; 
+		
+		$text = trim($text);
+		if ($text == '')
+		{
+			return array();
+		}
+	
+		$text = EXSearchHelper::strip_data(trim($text));
+		$text = stripslashes($text); 
+		$text = htmlspecialchars($text); 
+
+
+		$matches = array();
+		switch ($phrase)
+		{
+			case 'exact':
+				
+				$word  =App::db()->quote('%' . $text . '%', false);
+				$wheres2 = array();
+				$wheres2[] = 'a.title LIKE '	. $word;
+				$wheres2[] = 'a.description LIKE '	. $word;
+				
+				$where = '(' . implode(') OR (', $wheres2) . ')';
+				break;
+
+			case 'all':
+			case 'any':
+			default:
+				$words = explode(' ', $text);
+				$wheres = array();
+				foreach ($words as $word)
+				{
+					$word = App::db()->quote('%' . $word . '%', false);
+					$wheres2 = array();
+					$wheres2[] = 'php_nocase(a.title) LIKE php_nocase(' . $word . ')';
+					//$wheres2[] = 'LOWER(a.title) LIKE LOWER(' . $word . ')';
+					$wheres2[] = 'php_nocase(a.description) LIKE php_nocase(' . $word . ')';//!!
+					//$wheres2[] = 'LOWER(a.description) LIKE LOWER(' . $word . ')';//!!
+					
+
+					$wheres[] = implode(' OR ', $wheres2);
+				}
+				$where = '(' . implode(($phrase === 'all' ? ') AND (' : ') OR ('), $wheres) . ')';
+				break;
+		}
+		
+		switch ($ordering)
+		{
+			case 'oldest':
+				$order = 'date, ASC';
+				break;
+
+			case 'popular':
+				//$order = "'a.hits DESC'";
+				//break;
+
+			case 'alpha':
+				$order = 'title, ASC';
+				break;
+
+			case 'category':
+				$order = 'title, ASC'; 
+				break;
+
+			case 'newest':
+			default:
+				$order = 'date, DESC'; 
+				break;
+		}
+
+		$rows = array();
+
+		// -----  "PDO" -----
+
+		$mbString       = extension_loaded('mbstring');
+		$db 	= App::db()->getDatabase();
+
+		try{
+		$pdo = new PDO('sqlite:' . $db, null, null, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]); //pagekit.db
+		}catch(PDOException $pe){
+        	echo $pe->getMessage();
+    	}  
+		
+		//$pdo->sqliteCreateFunction('php_nocase', function($x) { return $x = $mbString ? mb_strtolower($x) : strtolower($x); });
+
+		if ($mbString ) {$pdo->sqliteCreateFunction('php_nocase', function($x) { return  mb_strtolower($x); });}
+		else {$pdo->sqliteCreateFunction('php_nocase', function($x) { return strtolower($x); });}
+
+		$orders = explode(",", $order);
+		$orderBy ='';
+		if ($orders) {
+			$orderBy =  $orders[0] . $orders[1] ;
+		}								
+
+		$query = $pdo->query('SELECT 	a.listing_id AS id,
+										a.title AS title,
+										a.description AS description,
+										a.modified_on AS date,
+										a.status AS status
+										
+								FROM '. $db_name .' a
+								
+								WHERE status = '. self::STATUS_ACTIVE.' AND ('. $where .')
+								GROUP BY a.title, a.description
+								ORDER BY ' . $orderBy .'
+								LIMIT 0 ,' . $limit . '
+								');
+
+		$rows = $query->fetchall(\PDO::FETCH_ASSOC);
+
+		
+
+		
+		/*
+		$query 	= App::db()->createQueryBuilder()
+		//$query 	= $pdo->createQueryBuilder()
+			->from('@listings_item a')
+		
+			->select('a.listing_id AS id, a.title AS title, a.description AS description, a.modified_on AS date, status') //featured_from featured_to
+			//->select($concatestr)
+			//->where( $where .')', $matches)
+			->where( $where )
+			//->where('status = ?', [1]) //self::STATUS_ACTIVE
+			->groupBy('a.title', 'a.description');
+			
+		//$limit = self::PAGES_PER_PAGE;
+		//$count = $query->count();
+		//$total = ceil($count / $limit);
+		//$page  = max(0, min($total - 1, $page));
+	
+
+			
+		$orders = explode(",", $order);
+		if ($orders) {
+			$query->orderBy($orders[0], $orders[1]);
+			}
+		$query->offset(0)->limit($limit);
+		
+		//$query->where(function ($query) { return $query->where('roles IS NULL')->whereInSet('roles', App::user()->roles, false, 'OR');});
+		
+		$rows = $query->get();
+		*/
+		$limit -= count($rows);
+
 		//Search on Page this content: (listings){"id":"1"}
+
+		
+
+		$index = '0';
+		if (!empty($rows))
+			// -----  "PDO" -----
+		{
+			foreach ($rows as $key => $item)
+			{
+				$list[$index]= new \stdclass();
+				$list[$index]->title 	 		= $item['title'];
+				$list[$index]->metadesc 		= '';
+				$list[$index]->metakey 			= '';
+				$list[$index]->created			= ''; // !!! $item['date'];
+				//$list[$index]->text 	 		= $item['text'];
+				$list[$index]->text 	 		= App::content()->applyPlugins($item['description'], ['item' => $item, 'markdown' => $markdown]);
+				$list[$index]->section			= __('Listings'); // PAGE NOT HAVING A SECTION
+				$list[$index]->catslug 			= '';
+				$list[$index]->browsernav 		= '';
+				$list[$index]->href	 			= '';//= App::url('@blog/id', ['id' => $item['id']], true);
+				$list[$index]->id		 		= $item['id'];
+				$index++;
+			}
+		$rows[] = $list;
+		}
 		
 		
+		$results = array();
+		if (count($rows))
+		{
+			foreach ($rows as $row)
+			{
+				$new_row = array();
+
+				foreach ($row as $article)
+				{
+
+					if (EXSearchHelper::checkNoHTML($article, $searchText, array('text', 'title')))
+					{
+						$new_row[] = $article;
+					}
+				}
+			
+				$results = array_merge($results, (array) $new_row);
+			}
 		
-		//$event->setSearchData($results);
+		
+		}
+		$event->setSearchData($results);
 		
 		return array();
 	}
@@ -135,5 +362,9 @@ class SearchDrivenListingsPlugin implements EventSubscriberInterface
 		}
 	return false;
 	}
+
+	//private function php_nocase($string) {
+	//	return strtolower($string);
+	///}
 
 }
