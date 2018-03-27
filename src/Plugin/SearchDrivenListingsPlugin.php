@@ -25,19 +25,20 @@ use Doctrine\DBAL\Platform\SqlitePlatform;
 use Doctrine\DBAL\Connection;
 use Pagekit\Event\EventSubscriberInterface;
 use Pagekit\Application as App;
+use Pagekit\Site\Model\Page;
 
 use PDO;
 
 /**
- * Blog search plugin.
+ * DrivenListings search plugin.
  *
  */
 
 class SearchDrivenListingsPlugin implements EventSubscriberInterface
 {
 	const PAGES_PER_PAGE = 50;
-
 	const STATUS_ACTIVE = 1;
+	const STATUS_PUBLISHED = 1;
 
 	/**
      * @var Repository
@@ -241,7 +242,8 @@ class SearchDrivenListingsPlugin implements EventSubscriberInterface
 										a.title AS title,
 										a.description AS description,
 										a.modified_on AS date,
-										a.status AS status
+										a.status AS status,
+										a.link AS link
 										
 								FROM '. $db_name .' a
 								
@@ -301,20 +303,34 @@ class SearchDrivenListingsPlugin implements EventSubscriberInterface
 				$list[$index]->title 	 		= $item['title'];
 				$list[$index]->metadesc 		= '';
 				$list[$index]->metakey 			= '';
-				$list[$index]->created			= ''; // !!! $item['date'];
+				$list[$index]->created = date("Y-m-d H:i:s", $item['date']);
+				//$list[$index]->created			= "@". $item['date'];
+
 				//$list[$index]->text 	 		= $item['text'];
 				$list[$index]->text 	 		= App::content()->applyPlugins($item['description'], ['item' => $item, 'markdown' => $markdown]);
 				$list[$index]->section			= __('Listings'); // PAGE NOT HAVING A SECTION
 				$list[$index]->catslug 			= '';
 				$list[$index]->browsernav 		= '';
-				$list[$index]->href	 			= '';//= App::url('@blog/id', ['id' => $item['id']], true);
+				if ($item['link'] === ""){
+					$f_href = $this->find_url_page($item['id'], $b_sqlite);
+					$list[$index]->href	 			= $f_href[0]->href;}
+				else {$list[$index]->href	 			= $item['link'];}
 				$list[$index]->id		 		= $item['id'];
 				$index++;
 			}
+		$rows = array();
 		$rows[] = $list;
 		}
 		
+
+
+		//
 		
+
+
+		//
+		// status = '. self::STATUS_ACTIVE.'
+
 		$results = array();
 		if (count($rows))
 		{
@@ -367,4 +383,34 @@ class SearchDrivenListingsPlugin implements EventSubscriberInterface
 	//	return strtolower($string);
 	///}
 
+	private function find_url_page($h_id, $b_sqlite) {
+
+		if (!$b_sqlite) {$concatestr = 'CONCAT (\'%"defaults":{"id":\', cast(a.id as char),\'}%\')';}
+		else {$concatestr = '(\'%"defaults":{"id":\'|| cast(a.id as char) || \'}%\')';}
+		
+		$matches['v0'] = 'page';
+		$matches['v1'] = self::STATUS_PUBLISHED;	
+		$where = '(c.status = :v1) AND ( a.content LIKE (\'%(listings){"id":"'.$h_id.'"}%\')';
+
+		$query = App::db()->createQueryBuilder()
+			->from('@system_page a')
+			->join('@system_node c', '(c.type LIKE :v0 AND c.data LIKE '.$concatestr.')', 'INNER')
+			->Where( $where .')', $matches);
+		//$query->groupBy('a.content');
+		$query->where(function ($query) { return $query->where('roles IS NULL')->whereInSet('roles', App::user()->roles, false, 'OR');});
+		$rows = $query->get();
+		$list = null;
+		$index = '0';
+		if (!empty($rows))
+			// -----  "PDO" -----
+		{
+			foreach ($rows as $key => $item)
+			{
+				$list[$index]= new \stdclass();
+				$list[$index]->href	 			= App::url($item['link']);
+				$index++;
+			}
+		}
+		return ($list);
+	}
 }
