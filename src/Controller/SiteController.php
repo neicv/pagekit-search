@@ -382,7 +382,8 @@ class SiteController
 					$searchWords = preg_split("/\s+/u", $searchWordA);
 					$needle      = $searchWords[0];
 				}
-					for ($i = 0, $count = count($results); $i < $count; ++$i)
+
+				for ($i = 0, $count = count($results); $i < $count; ++$i)
 				{
 					$row = &$results[$i]->text;
 

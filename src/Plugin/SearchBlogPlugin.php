@@ -343,7 +343,7 @@ class SearchBlogPlugin implements EventSubscriberInterface
 						}
 					}
 				if (!empty($list)){
-
+					$rows = array();
 					$rows[] = $list;
 					}
 				}

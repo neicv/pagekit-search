@@ -234,6 +234,7 @@ class SearchPagePlugin implements EventSubscriberInterface
 					$list[$index]->href	 			= App::url($item['link']);
 					$index++;
 				}
+			$rows = array();
 			$rows[] = $list;
 			}
 		
