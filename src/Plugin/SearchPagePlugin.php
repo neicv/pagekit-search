@@ -206,7 +206,7 @@ class SearchPagePlugin implements EventSubscriberInterface
 			* @param  string $order
 			* @return self
 			*/
-			$query->groupBy('a.title, a.content');
+			$query->groupBy('a.title, a.content','a.id','c.id');
 			//$query->offset($page * $limit)->limit($limit);
 			$query->offset(0)->limit($limit);
 			$query->where(function ($query) { return $query->where('roles IS NULL')->whereInSet('roles', App::user()->roles, false, 'OR');});

@@ -10,6 +10,7 @@
                 <ul class="uk-nav uk-nav-side pk-nav-large" data-uk-tab="{ connect: '#tab-content' }">
                     <li><a><i class="pk-icon-large-settings uk-margin-right"></i> {{ 'General' | trans }}</a></li>
                     <li><a><i class="pk-icon-large-comment uk-margin-right"></i> {{ 'Additional' | trans }}</a></li>
+                    <li v-show="'1' == pluginDrivenListings"><a><i class="pk-icon-large-meta uk-margin-right"></i> {{ 'Listings' | trans }}</a></li>
                 </ul>
 
             </div>
@@ -98,10 +99,23 @@
 							<p class="uk-form-controls-condensed">
                                 <label><input type="checkbox" v-model="config.defaults.markdown_enabled"> {{ 'Enable Markdown' | trans }}</label>
                             </p>
-
                         </div>
                     </div>
-
+					<div class="uk-form-row">
+                        <span class="uk-form-label"><span class="{{ config.defaults.highlight }}"> {{ 'Highlight'| trans }}</span> {{ 'keyword' | trans }}</span>
+                        <div class="uk-form-controls uk-form-controls-text">
+                            <p class="uk-form-controls-condensed">
+                                <select class="uk-form-small" v-model="config.defaults.highlight">
+                                    <option value="">{{ 'None' | trans }}</option>
+                                    <option value="highlight">{{ 'Default' | trans }}</option>
+                                    <option value="uk-text-bold uk-text-success">{{ 'Success' | trans }}</option>
+                                    <option value="uk-text-bold uk-text-primary"><class="uk-text-warning">{{ 'Primary' | trans }}</option>
+                                    <option value="uk-text-bold uk-text-warning">{{ 'Warning' | trans }}</option>
+                                    <option value="uk-text-bold uk-text-danger">{{ 'Danger' | trans }}</option>
+                                </select>
+                            </p>
+                        </div>
+                    </div>
 				</li>
 				<li>
 
@@ -129,6 +143,69 @@
 							</p>
                         </div>
                     </div>
+
+                </li>
+                <li>
+
+                    <div class="uk-margin uk-flex uk-flex-space-between uk-flex-wrap" data-uk-margin>
+                        <div data-uk-margin>
+
+                            <h2 class="uk-margin-remove">{{ 'Driven Listings Plugin' | trans }}</h2>
+
+                        </div>
+                        <div data-uk-margin>
+
+                            <button class="uk-button uk-button-primary" @click.prevent="save">{{ 'Save' | trans }}</button>
+
+                        </div>
+                    </div>
+
+					<div class="uk-form-row">
+					{{'Here content custom options for the Driven Listings Search Plugin' | trans}}
+					</div>
+					<hr class="uk-article-divider">
+
+                    <div class="uk-form-row">
+                        <span class="uk-form-label" data-uk-tooltip="{pos:'bottom-right', delay : '500' , animation : 'true'}" title="{{'Select how href addresses will be displayed. Self item link or Listings' | trans}}">{{ 'Use item href' | trans}}</span>
+                        <div class="uk-form-controls uk-form-controls-text">
+							<p class="uk-form-controls-condensed">
+								<label><input type="checkbox" v-model="config.pluginDrivenListings.use_item_href"> {{ 'Enable'| trans }}</label>
+                            </p>
+                        </div>
+                        <span class="uk-form-label" data-uk-tooltip="{pos:'bottom-right', delay : '500' , animation : 'true'}" title="{{'Activate #sharp link to item' | trans}}">{{ 'Activate #sharp link' | trans}}</span>
+                        <div class="uk-form-controls uk-form-controls-text">
+							<p class="uk-form-controls-condensed">
+								<label><input type="checkbox" v-model="config.pluginDrivenListings.use_sharp_links"> {{ 'Enable'| trans }}</label>
+                            </p>
+                        </div>
+                    </div>
+
+                    <h2 class="uk-form-heading">{{'Use Areas of search' | trans}}</h2>
+                    <hr class="uk-article-divider">
+                    <div class="uk-form-row">
+                        <span class="uk-form-label" data-uk-tooltip="{pos:'bottom-right', delay : '500' , animation : 'true'}" title="{{'Search keywords in Listing of Listings' | trans}}">{{ 'Listing' | trans}}</span>
+                        <div class="uk-form-controls uk-form-controls-text">
+							<p class="uk-form-controls-condensed">
+								<label><input type="checkbox" v-model="config.pluginDrivenListings.use_listing_area"> {{ 'Enable'| trans }}</label>
+                            </p>
+                        </div>
+                    </div>
+                    
+                        <span class="uk-form-label" data-uk-tooltip="{pos:'bottom-right', delay : '500' , animation : 'true'}" title="{{'Search keywords in Category of Listings' | trans}}">{{ 'Category' | trans}}</span>
+                        <div class="uk-form-controls uk-form-controls-text">
+							<p class="uk-form-controls-condensed">
+								<label><input type="checkbox" v-model="config.pluginDrivenListings.use_category_area"> {{ 'Enable'| trans }}</label>
+                            </p>
+                        </div>
+                    
+                    
+                        <span class="uk-form-label" data-uk-tooltip="{pos:'bottom-right', delay : '500' , animation : 'true'}" title="{{'Search keywords in Items of Listings' | trans}}">{{ 'Items' | trans}}</span>
+                        <div class="uk-form-controls uk-form-controls-text">
+							<p class="uk-form-controls-condensed">
+								<label><input type="checkbox" v-model="config.pluginDrivenListings.use_items_area"> {{ 'Enable'| trans }}</label>
+                            </p>
+                        </div>
+                    
 
                 </li>
             </ul>

@@ -116,4 +116,6 @@
   'Date' => 'Fecha',
   'Count' => 'Cuenta',
   'Statistics' => 'Estadística',
+  'keyword' => 'palabra clave',
+  'Highlight' => 'Highlight',
   );

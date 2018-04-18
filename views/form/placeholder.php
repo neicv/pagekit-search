@@ -105,14 +105,18 @@
 						<!--</?php //echo $this->pagination->limitstart + $result->count.'. ';?>-->
 						<?php if ($result->href) :?>
 						
-							<!--<a href="</?php echo $view->url($result->href);?>" title="</?php echo $this->escape($result->title);?>" -->
-							<a href="<?= $result->href ?>" title="<?php echo $this->escape($result->title);?>" 
+							<a href="<?= $result->href ?>" 
 							<?php if ($result->browsernav == 1) :?> target="_blank"<?php endif;?>>
-							<?php echo $this->escape($result->title);?></a>
+							<?php // $result->title should not be escaped in this case, as it may ?>
+							<?php // contain span HTML tags wrapping the searched terms, if present ?>
+							<?php // in the title. ?>
+							<?php echo $result->title; ?>
+							</a>
 
-						<?php else:?>
-							<?php echo $this->escape($result->title);?>
-						<?php endif; ?>
+							<?php else : ?>
+								<?php // see above comment: do not escape $result->title ?>
+								<?php echo $result->title; ?>
+							<?php endif; ?>
 					</h1>
 
 					<h5 class="uk-article-content  uk-margin">

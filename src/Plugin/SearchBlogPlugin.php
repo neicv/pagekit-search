@@ -204,7 +204,7 @@ class SearchBlogPlugin implements EventSubscriberInterface
 			->select('a.title title, a.id id, a.date date')
 			->select($concatestr)
 			->where( $where .')', $matches)
-			->groupBy('a.title', 'a.content', 'a.excerpt');
+			->groupBy('a.title', 'a.content', 'a.excerpt', 'a.id');
 			
 		/* $limit = self::PAGES_PER_PAGE;
 		$count = $query->count();
@@ -308,7 +308,7 @@ class SearchBlogPlugin implements EventSubscriberInterface
 					->whereIn('post_id', array_keys($posts))
 					//->offset($page * $limit)->limit($limit)
 					->offset(0)->limit($limit)
-					->groupBy('post_id','content');
+					->groupBy('post_id','content','id');
 
 					$pending = $pending->get();
 			} else {

@@ -42,7 +42,8 @@ class SearchController
                 'name'  => 'friendlyit/search:views/admin/settings.php'
             ],
             '$data' => [
-                'config' => App::module('friendlyit/search')->config()
+				'config' => App::module('friendlyit/search')->config(),
+				'pluginDrivenListings' => (bool) App::module('driven/listings')
             ]
         ];
     }

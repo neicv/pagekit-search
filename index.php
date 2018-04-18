@@ -1,11 +1,12 @@
 <?php
-
+//namespace Pagekit\Site;
 use Friendlyit\Search\Plugin\SearchContentPlugin;
 use Friendlyit\Search\Plugin\SearchPagePlugin;
 use Friendlyit\Search\Plugin\SearchBlogPlugin;
 use Friendlyit\Search\Plugin\SearchDrivenListingsPlugin;
 use Pagekit\Application as App;
-	
+//use Pagekit\Site\Model\Node;
+
 return [
 
     'name' => 'friendlyit/search',
@@ -32,15 +33,15 @@ return [
 
         '/search' => [
             'name' => '@search',
-            'controller' => [
-			'Friendlyit\\Search\\Controller\\SearchController'
-			]
+            'controller' =>	'Friendlyit\\Search\\Controller\\SearchController'
         ],
 		'/api/search' => [
             'name' => '@search/api',
-            'controller' => [
-                'Friendlyit\\Search\\Controller\\StatisticsApiController',
-            ]
+            'controller' => 'Friendlyit\\Search\\Controller\\StatisticsApiController'
+        ],
+        '/search/info' => [
+            'name' => '@search/info',
+            'controller' => 'Friendlyit\\Search\\Controller\\InfoController'
         ]
     ],
 	
@@ -63,20 +64,30 @@ return [
 
         'defaults' => [
 
-			'limit_search_result'    => 50,
-            'result_per_page'        => 10,
-            'data_creation'          => true,
-            'use_areas_search'       => true, 
-            'markdown_enabled'       => true,
-			'show_pages_counter'	 => true,
-			'show_posted_in'	  	 => true,
-			'title'            	  	 => 'Search Title',
-            'show_title'             => true
+			'limit_search_result'   => 50,
+            'result_per_page'       => 10,
+            'data_creation'         => true,
+            'use_areas_search'      => true, 
+            'markdown_enabled'      => true,
+			'show_pages_counter'	=> true,
+			'show_posted_in'	  	=> true,
+			'title'            	  	=> 'Search Title',
+            'show_title'            => true,
+            'highlight'             => 'highlight',
 
         ],
 		'advanced' => [
 
             'statistics_enabled'       => false,
+        ],
+
+        'pluginDrivenListings' => [
+
+            'use_item_href'         => false,
+            'use_items_area'        => true,
+            'use_category_area'     => true,
+            'use_listing_area'      => true,
+            'use_sharp_links'       => false,
         ],
     ],
 
@@ -97,9 +108,16 @@ return [
             'access' => 'search: manage search'
         ],
         'search: settings' => [
-            'parent' => 'search',
             'label' => 'Settings',
+            'parent' => 'search',
             'url' => '@search/settings',
+            'active' => '@search/settings*',
+            'access' => 'system: manage settings'
+        ],
+        'search: info' => [
+            'label' => 'Info',
+            'parent' => 'search',
+            'url' => '@search/info',
             'access' => 'system: manage settings'
         ]
     ],
@@ -115,8 +133,8 @@ return [
 
     ],
 	
-	'settings' => '@search/admin/settings',
-	 
+	'settings' => '@search/settings',
+
 	'events' => [
 
 /*        'boot' => function ($event, $app) {
@@ -131,23 +149,30 @@ return [
 		
 		'boot' => function ($event, $app) {
 			if (App::module('blog')) {
-            $app->subscribe(
 
-                new SearchBlogPlugin
-                
-            );
+                $query =  App::db()->createQueryBuilder();
+                $query = $query->from('@system_node');
+                $query->where(['type' => 'blog']);
+                $query->where(['status' => 1] );
+                $count = $query->count();
+                            
+                //$query = Node::query();
+
+                if ($count){
+                    $app->subscribe(
+                    new SearchBlogPlugin
+                    );
+                }
 			}
 			
 			if (App::module('driven/listings')) {
-            $app->subscribe(
-
+                $app->subscribe(
                 new SearchDrivenListingsPlugin
-                
-            );
+                );
 			}
 			
 			$app->subscribe(
-			new SearchPagePlugin
+			    new SearchPagePlugin
 			);
         }, 
 		

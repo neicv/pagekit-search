@@ -105,6 +105,13 @@ class SiteController
 	protected $_enable_log_searches = false;
 	
 	protected $AdditionalUrlParam = null;
+
+	/**
+	 * Search Highlight class
+	 *
+	 * @var string
+	 */
+	 protected $_highlight = null;
 	
 	
 	// *************************************************
@@ -152,6 +159,9 @@ class SiteController
 		// Get the pagination request variables
 		$this->_limit = (!$params['result_per_page']) ? 15 : $params['result_per_page'];
 		$this->_limitstart = '0';
+
+		// Get the highlight class string variables
+		$this->_highlight = isset($params['highlight']) ? $params['highlight'] : "" ;
 
 
 
@@ -364,13 +374,6 @@ class SiteController
 			{	
 				$lists['searchkeywordnresult'] = $this->exsearchhelper->getPluralSearchKeywordNResult($total); 
 
-
-					
-				$hl1            = '<span class="uk-text-bold uk-text-success">'; //'<span class="highlight">';
-				$hl2            = '</span>';
-				$mbString       = extension_loaded('mbstring');
-				$highlighterLen = strlen($hl1 . $hl2);
-
 				if ($match === 'exact')
 				{
 					$searchWords = array($searchword);
@@ -383,111 +386,25 @@ class SiteController
 					$needle      = $searchWords[0];
 				}
 
+				// Make sure there are no slashes in the needle
+				$needle = str_replace('/', '\/', $needle);
+
 				for ($i = 0, $count = count($results); $i < $count; ++$i)
 				{
-					$row = &$results[$i]->text;
+					$rowTitle = &$results[$i]->title;
+					$rowTitleHighLighted = $this->highLight($rowTitle, $needle, $searchWords);
+					$rowText = &$results[$i]->text;
+					$rowTextHighLighted = $this->highLight($rowText, $needle, $searchWords);
 
-					// Doing HTML entity decoding here, just in case we get any HTML entities here.
-					$quoteStyle   = version_compare(PHP_VERSION, '5.4', '>=') ? ENT_NOQUOTES | ENT_HTML401 : ENT_NOQUOTES;
-					$row          = html_entity_decode($row, $quoteStyle, 'UTF-8');
-					$row          = EXSearchHelper::prepareSearchContent($row, $needle);
-					$searchWords  = array_values(array_unique($searchWords));
-					$lowerCaseRow = $mbString ? mb_strtolower($row) : strtolower($row);
-
-					$transliteratedLowerCaseRow = EXSearchHelper::remove_accents($lowerCaseRow);
-
-					$posCollector = array();
-
-					foreach ($searchWords as $highlightWord)
-					{
-						$found = false;
-
-						if ($mbString)
-						{
-							$lowerCaseHighlightWord = mb_strtolower($highlightWord);
-
-							if (($pos = mb_strpos($lowerCaseRow, $lowerCaseHighlightWord)) !== false)
-							{
-								$found = true;
-							}
-							elseif (($pos = mb_strpos($transliteratedLowerCaseRow, $lowerCaseHighlightWord)) !== false)
-							{
-								$found = true;
-							}
-						}
-						else
-						{
-							$lowerCaseHighlightWord = strtolower($highlightWord);
-
-							if (($pos = strpos($lowerCaseRow, $lowerCaseHighlightWord)) !== false)
-							{
-								$found = true;
-							}
-							elseif (($pos = strpos($transliteratedLowerCaseRow, $lowerCaseHighlightWord)) !== false)
-							{
-								$found = true;
-							}
-						}
-
-						if ($found === true)
-						{
-							// Iconv transliterates '€' to 'EUR'
-							// TODO: add other expanding translations?
-							$eur_compensation = $pos > 0 ? substr_count($row, "\xE2\x82\xAC", 0, $pos) * 2 : 0;
-							$pos -= $eur_compensation;
-
-							// Collect pos and search-word
-							$posCollector[$pos] = $highlightWord;
-						}
-					}
-
-					if (count($posCollector))
-					{
-						// Sort by pos. Easier to handle overlapping highlighter-spans
-						ksort($posCollector);
-						$cnt                = 0;
-						$lastHighlighterEnd = -1;
-
-						foreach ($posCollector as $pos => $highlightWord)
-						{
-							$pos += $cnt * $highlighterLen;
-
-							/*
-							 * Avoid overlapping/corrupted highlighter-spans
-							 * TODO $chkOverlap could be used to highlight remaining part
-							 * of search-word outside last highlighter-span.
-							 * At the moment no additional highlighter is set.
-							 */
-							$chkOverlap = $pos - $lastHighlighterEnd;
-
-							if ($chkOverlap >= 0)
-							{
-								// Set highlighter around search-word
-								if ($mbString)
-								{
-									$highlightWordLen = mb_strlen($highlightWord);
-									$row              = mb_substr($row, 0, $pos) . $hl1 . mb_substr($row, $pos, $highlightWordLen)
-										. $hl2 . mb_substr($row, $pos + $highlightWordLen);
-								}
-								else
-								{
-									$highlightWordLen = strlen($highlightWord);
-									$row              = substr($row, 0, $pos)
-										. $hl1 . substr($row, $pos, strlen($highlightWord))
-										. $hl2 . substr($row, $pos + strlen($highlightWord));
-								}
-
-								$cnt++;
-								$lastHighlighterEnd = $pos + $highlightWordLen + $highlighterLen;
-							}
-						}
-					}
-					
-					$result = & $results[$i];
+					$result = &$results[$i];
 
 					if (!$result->created) {$result->created = '';}
+
+					$result->title   = $rowTitleHighLighted;
+					$result->text    = $rowTextHighLighted;
 					$result->count   = $i + 1;
 				}
+			
 			}
 		}
 
@@ -778,5 +695,124 @@ class SiteController
     	}
     	return null;
     }
+	
+	/**
+	 * Method to control the highlighting of keywords
+	 *
+	 * @param   string  $string       text to be searched
+	 * @param   string  $needle       text to search for
+	 * @param   string  $searchWords  words to be searched  
+	 *
+	 * @return  mixed  A string.
+	 *
+	 * @since   0.1.7  (3.8.4)
+	 */
+	public function highLight($string, $needle, $searchWords)
+	{
+		//$hl1            = '<span class="uk-text-bold uk-text-success">';  //$this->_highlight
+		$hl1            = '<span class="' .$this->_highlight .'">';
+		//$hl1            = '<span class="highlight">';
+		$hl2            = '</span>';
+		$mbString       = extension_loaded('mbstring');
+		$highlighterLen = strlen($hl1 . $hl2);
+
+		// Doing HTML entity decoding here, just in case we get any HTML entities here.
+		$quoteStyle   = version_compare(PHP_VERSION, '5.4', '>=') ? ENT_NOQUOTES | ENT_HTML401 : ENT_NOQUOTES;
+		$row          = html_entity_decode($string, $quoteStyle, 'UTF-8');
+		$row          = EXSearchHelper::prepareSearchContent($row, $needle);
+		$searchWords  = array_values(array_unique($searchWords));
+		$lowerCaseRow = $mbString ? mb_strtolower($row) : strtolower($row);
+
+		$transliteratedLowerCaseRow = EXSearchHelper::remove_accents($lowerCaseRow);
+
+		$posCollector = array();
+
+		foreach ($searchWords as $highlightWord)
+		{
+			$found = false;
+
+			if ($mbString)
+			{
+				$lowerCaseHighlightWord = mb_strtolower($highlightWord);
+
+				if (($pos = mb_strpos($lowerCaseRow, $lowerCaseHighlightWord)) !== false)
+				{
+					$found = true;
+				}
+				elseif (($pos = mb_strpos($transliteratedLowerCaseRow, $lowerCaseHighlightWord)) !== false)
+				{
+					$found = true;
+				}
+			}
+			else
+			{
+				$lowerCaseHighlightWord = strtolower($highlightWord);
+
+				if (($pos = strpos($lowerCaseRow, $lowerCaseHighlightWord)) !== false)
+				{
+					$found = true;
+				}
+				elseif (($pos = strpos($transliteratedLowerCaseRow, $lowerCaseHighlightWord)) !== false)
+				{
+					$found = true;
+				}
+			}
+
+			if ($found === true)
+			{
+				// Iconv transliterates '€' to 'EUR'
+				// TODO: add other expanding translations?
+				$eur_compensation = $pos > 0 ? substr_count($row, "\xE2\x82\xAC", 0, $pos) * 2 : 0;
+				$pos -= $eur_compensation;
+
+				// Collect pos and search-word
+				$posCollector[$pos] = $highlightWord;
+			}
+		}
+
+		if (count($posCollector))
+		{
+			// Sort by pos. Easier to handle overlapping highlighter-spans
+			ksort($posCollector);
+			$cnt                = 0;
+			$lastHighlighterEnd = -1;
+
+			foreach ($posCollector as $pos => $highlightWord)
+			{
+				$pos += $cnt * $highlighterLen;
+
+				/*
+				 * Avoid overlapping/corrupted highlighter-spans
+				 * TODO $chkOverlap could be used to highlight remaining part
+				 * of search-word outside last highlighter-span.
+				 * At the moment no additional highlighter is set.
+				 */
+				$chkOverlap = $pos - $lastHighlighterEnd;
+
+				if ($chkOverlap >= 0)
+				{
+					// Set highlighter around search-word
+					if ($mbString)
+					{
+						$highlightWordLen = mb_strlen($highlightWord);
+						$row              = mb_substr($row, 0, $pos) . $hl1 . mb_substr($row, $pos, $highlightWordLen)
+							. $hl2 . mb_substr($row, $pos + $highlightWordLen);
+					}
+					else
+					{
+						$highlightWordLen = strlen($highlightWord);
+						$row              = substr($row, 0, $pos)
+							. $hl1 . substr($row, $pos, strlen($highlightWord))
+							. $hl2 . substr($row, $pos + strlen($highlightWord));
+					}
+
+					$cnt++;
+					$lastHighlighterEnd = $pos + $highlightWordLen + $highlighterLen;
+				}
+			}
+		}
+
+		return $row;
+	}
 
 }
