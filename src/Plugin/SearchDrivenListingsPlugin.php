@@ -1,7 +1,7 @@
 <?php
 /**
  * @package     Pagekit Extension
- * @subpackage  Search.content - Driven / Listings
+ * @subpackage  Search.content - "Driven / Listings" Extension Plugin
  *
  * @copyright   Copyright (C) 2018 Friendly-it, Inc. All rights reserved.
  * @license     GNU General Public License version 2 or later; see LICENSE.txt
@@ -13,21 +13,17 @@ namespace Friendlyit\Search\Plugin;
 
 use Friendlyit\Search\Helpers\EXSearchHelper;
 use Friendlyit\Search\Event\SearchEvent;
-use Pagekit\Site\Model\Page;
-use Driven\Listings\Model\item;
-use Driven\Listings\Model\Listing;
-use Driven\Listings\Model\ListingCategory;
+//use Pagekit\Site\Model\Page;
+//use Pagekit\Site\Model\Node;
+//use Driven\Listings\Model\item;
+//use Driven\Listings\Model\Listing;
+//use Driven\Listings\Model\ListingCategory;
 
-
-//use Pagekit\Component\Database\ORM\Repository;
-use Doctrine\DBAL\Platform\SqlitePlatform;
-//use Doctrine\DBAL\Driver\PDOConnection;
-use Doctrine\DBAL\Connection;
 use Pagekit\Event\EventSubscriberInterface;
 use Pagekit\Application as App;
 
-
 use PDO;
+use PDOException;
 
 /**
  * DrivenListings search plugin.
@@ -40,11 +36,6 @@ class SearchDrivenListingsPlugin implements EventSubscriberInterface
 	const STATUS_ACTIVE = 1;
 	const STATUS_PUBLISHED = 1;
 
-    /**
-     * @var Repository
-     */
-    protected $roles;
-	
     /**
      * Content plugins callback.
      *
@@ -106,7 +97,6 @@ class SearchDrivenListingsPlugin implements EventSubscriberInterface
 		(bool) $use_category_area 	= isset($params['use_category_area']) ? $params['use_category_area'] : true ;
 		(bool) $use_listing_area 	= isset($params['use_listing_area']) ? $params['use_listing_area'] : true ;
 		(bool) $use_sharp_links 	= isset($params['use_sharp_links']) ? $params['use_sharp_links'] : false ;
-
 		
 		$parameters = $event->getParameters();
 		
@@ -117,26 +107,12 @@ class SearchDrivenListingsPlugin implements EventSubscriberInterface
 		
 		$searchText = $text;
 
-		/*if (is_array($areas))
-		{
-			if (count($areas))
-			{
-				if (!array_intersect($areas, array_keys($this->onContentSearchAreasL())))
-				{
-					$a = array();
-					$event->setSearchData($a);
-					return $a;
-				}
-			}
-		} */
-
 		if (is_array($areas) && !array_intersect($areas, array_keys($this->onContentSearchAreasL())))
 		{
 			return array();
 		}
-
 		
-		if (App::db()->getDatabasePlatform()->getName() === 'sqlite') $b_sqlite = true; else $b_sqlite = false;
+		(bool )$b_sqlite = App::db()->getDatabasePlatform()->getName() === 'sqlite';
 
 		$date  						= new \DateTime();
 		$now   						= $date;//->toSql();
@@ -144,7 +120,6 @@ class SearchDrivenListingsPlugin implements EventSubscriberInterface
 		$db_name_listings_item 		= $prefix.'listings_item'; 
 		$db_name_listings_category	= $prefix.'listings_category'; 
 		$db_name_listings_listing 	= $prefix.'listings_listing'; 
-
 		
 		$text = trim($text);
 		if ($text == '')
@@ -156,7 +131,6 @@ class SearchDrivenListingsPlugin implements EventSubscriberInterface
 		$text = stripslashes($text); 
 		$text = htmlspecialchars($text); 
 
-
 		$matches = array();
 		switch ($phrase)
 		{
@@ -166,25 +140,21 @@ class SearchDrivenListingsPlugin implements EventSubscriberInterface
 				$wheres2 = array();
 				$wheres2[] = 'a.title LIKE '	. $word;
 				$wheres2[] = 'a.description LIKE '	. $word;
-				
 				$where = '(' . implode(') OR (', $wheres2) . ')';
 				break;
 
 			case 'all':
 			case 'any':
 			default:
+
 				$words = explode(' ', $text);
 				$wheres = array();
 				foreach ($words as $word)
 				{
 					$word = App::db()->quote('%' . $word . '%', false);
 					$wheres2 = array();
-					$wheres2[] = 'php_nocase(a.title) LIKE php_nocase(' . $word . ')';
-					//$wheres2[] = 'LOWER(a.title) LIKE LOWER(' . $word . ')';
-					$wheres2[] = 'php_nocase(a.description) LIKE php_nocase(' . $word . ')';//!!
-					//$wheres2[] = 'LOWER(a.description) LIKE LOWER(' . $word . ')';//!!
-					
-
+					$wheres2[] = ($b_sqlite) ? 'php_nocase(a.title) LIKE php_nocase(' . $word . ')' : 'LOWER(a.title) LIKE LOWER(' . $word . ')';
+					$wheres2[] = ($b_sqlite) ? 'php_nocase(a.description) LIKE php_nocase(' . $word . ')' : 'LOWER(a.description) LIKE LOWER(' . $word . ')';
 					$wheres[] = implode(' OR ', $wheres2);
 				}
 				$where = '(' . implode(($phrase === 'all' ? ') AND (' : ') OR ('), $wheres) . ')';
@@ -215,51 +185,71 @@ class SearchDrivenListingsPlugin implements EventSubscriberInterface
 				break;
 		}
 
-		$rows = array();
-
-		// -----  "PDO" -----
-
-		$mbString       = extension_loaded('mbstring');
-		$db 	= App::db()->getDatabase();
-
-		try{
-		$pdo = new PDO('sqlite:' . $db, null, null, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]); //pagekit.db
-		}catch(PDOException $pe){
-        	echo $pe->getMessage();
-    	}  
-		
-		//$pdo->sqliteCreateFunction('php_nocase', function($x) { return $x = $mbString ? mb_strtolower($x) : strtolower($x); });
-
-		if ($mbString ) {$pdo->sqliteCreateFunction('php_nocase', function($x) { return  mb_strtolower($x); });}
-		else {$pdo->sqliteCreateFunction('php_nocase', function($x) { return strtolower($x); });}
-
 		$orders = explode(",", $order);
 		$orderBy ='';
 		if ($orders) {
 			$orderBy =  $orders[0] . $orders[1] ;
 		}
 
+		$rows = array();
 
+		// -----  "PDO" -----
+		// Prepare SQLite
+		if ($b_sqlite){
+			$mbString       = extension_loaded('mbstring');
+			$db 			= App::db()->getDatabase();
+
+			try{
+			$pdo = new PDO('sqlite:' . $db, null, null, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]); //pagekit.db
+			}catch(PDOException $pe){
+				echo $pe->getMessage();
+			}  
+			
+			//$pdo->sqliteCreateFunction('php_nocase', function($x) { return $x = $mbString ? mb_strtolower($x) : strtolower($x); });
+
+			if ($mbString ) {$pdo->sqliteCreateFunction('php_nocase', function($x) { return  mb_strtolower($x); });}
+			else {$pdo->sqliteCreateFunction('php_nocase', function($x) { return strtolower($x); });}
+		}
+		
 		/*
 		// Search keywords on Listings 
 		*/
 
 		if  ($use_listing_area){
-			$query = $pdo->query('SELECT 	a.id AS id,
-											a.title AS title,
-											a.description AS description,
-											a.modified_on AS date,
-											a.status AS listing_status
-											
-									FROM '. $db_name_listings_listing .' a 
+			if ($b_sqlite){
+				//SQLite
+				$query = $pdo->query('SELECT 	a.id AS id,
+												a.title AS title,
+												a.description AS description,
+												a.modified_on AS date,
+												a.status AS listing_status
+												
+										FROM '. $db_name_listings_listing .' a 
 
-									WHERE listing_status = '. self::STATUS_ACTIVE.' AND  ('. $where .')
-									GROUP BY a.title, a.description
-									ORDER BY ' . $orderBy .'
-									LIMIT 0 ,' . $limit . '
-									');
+										WHERE a.status = '. self::STATUS_ACTIVE.' AND  ('. $where .')
+										GROUP BY a.title, a.description
+										ORDER BY ' . $orderBy .'
+										LIMIT 0 ,' . $limit . '
+										');
 
-			$listing = $query->fetchall(\PDO::FETCH_ASSOC);
+					$listing = $query->fetchall(\PDO::FETCH_ASSOC);
+				}
+			else{
+				// MySQL
+				$listing = App::db()->executeQuery('SELECT 	a.id AS id,
+															a.title AS title,
+															a.description AS description,
+															a.modified_on AS date,
+															a.status AS listing_status
+															
+													FROM '. $db_name_listings_listing .' a 
+
+													WHERE a.status = '. self::STATUS_ACTIVE.' AND  ('. $where .')
+													GROUP BY a.title, a.description, a.id
+													ORDER BY ' . $orderBy .'
+													LIMIT 0 ,' . $limit . '
+													')->fetchAll();
+			}
 
 			$index = '0';
 			$list =array ();
@@ -294,55 +284,68 @@ class SearchDrivenListingsPlugin implements EventSubscriberInterface
 		/*
 		// Search keywords on Listings Items
 		*/
+		
 		if  ($use_items_area){
-			$query = $pdo->query('SELECT 	a.id AS item_id,
-											a.listing_id AS id,
-											a.title AS title,
-											a.description AS description,
-											a.modified_on AS date,
-											a.status AS item_status,
-											a.link AS link,
-											c.status AS category_status,
-											l.status AS listing_status
-											
-									FROM '. $db_name_listings_item .' a 
+			//SQLite
+			if ($b_sqlite){
+				$query = $pdo->query('SELECT 	a.id AS item_id,
+												a.listing_id AS id,
+												a.title AS title,
+												a.description AS description,
+												a.modified_on AS date,
+												a.status AS item_status,
+												a.link AS link,
+												c.status AS category_status,
+												l.status AS listing_status
+												
+										FROM '. $db_name_listings_item .' a 
 
-									INNER JOIN '. $db_name_listings_category .' c
-									ON a.category_id = c.id
+										INNER JOIN '. $db_name_listings_category .' c
+										ON a.category_id = c.id
 
-									INNER JOIN '. $db_name_listings_listing .' l
-									ON a.listing_id = l.id
+										INNER JOIN '. $db_name_listings_listing .' l
+										ON a.listing_id = l.id
 
-									WHERE item_status = '. self::STATUS_ACTIVE.' AND category_status = '. self::STATUS_ACTIVE.' AND listing_status = '. self::STATUS_ACTIVE.' AND  ('. $where .')
-									GROUP BY a.title, a.description
-									ORDER BY ' . $orderBy .'
-									LIMIT 0 ,' . $limit . '
-									');
-
-			$l_items = $query->fetchall(\PDO::FETCH_ASSOC);
-
-			//->join('@system_node c', '(c.type LIKE :v0 AND c.data LIKE '.$concatestr.')', 'INNER')
-
-			
-			/*
-			$query 	= App::db()->createQueryBuilder()
-			//$query 	= $pdo->createQueryBuilder()
-				->from('@listings_item a')
-			
-				->select('a.listing_id AS id, a.title AS title, a.description AS description, a.modified_on AS date, status') //featured_from featured_to
-				//->select($concatestr)
-				//->where( $where .')', $matches)
-				->where( $where )
-				//->where('status = ?', [1]) //self::STATUS_ACTIVE
-				->groupBy('a.title', 'a.description');
+										WHERE a.status = '. self::STATUS_ACTIVE.' AND c.status = '. self::STATUS_ACTIVE.' AND l.status = '. self::STATUS_ACTIVE.' AND  ('. $where .')
+										GROUP BY a.title, a.description
+										ORDER BY ' . $orderBy .'
+										LIMIT 0 ,' . $limit . '
+										');
+				$l_items = $query->fetchall(\PDO::FETCH_ASSOC);
+			}
 				
+			else{
+				// MySQL
+			    $l_items = App::db()->executeQuery('SELECT 	a.id AS item_id,
+												a.listing_id AS id,
+												a.title AS title,
+												a.description AS description,
+												a.modified_on AS date,
+												a.status AS item_status,
+												a.link AS link,
+												c.status AS category_status,
+												l.status AS listing_status
+												
+										FROM '. $db_name_listings_item .' a 
+
+										INNER JOIN '. $db_name_listings_category .' c
+										ON a.category_id = c.id
+
+										INNER JOIN '. $db_name_listings_listing .' l
+										ON a.listing_id = l.id
+
+										WHERE a.status = '. self::STATUS_ACTIVE.' AND c.status = '. self::STATUS_ACTIVE.' AND l.status = '. self::STATUS_ACTIVE.' AND  ('. $where .')
+										GROUP BY a.title, a.description, a.id
+										ORDER BY ' . $orderBy .'
+										LIMIT 0 ,' . $limit . '
+										')->fetchAll();
+			}
+
+			/*
 			//$limit = self::PAGES_PER_PAGE;
 			//$count = $query->count();
 			//$total = ceil($count / $limit);
 			//$page  = max(0, min($total - 1, $page));
-		
-
-				
 			$orders = explode(",", $order);
 			if ($orders) {
 				$query->orderBy($orders[0], $orders[1]);
@@ -354,13 +357,9 @@ class SearchDrivenListingsPlugin implements EventSubscriberInterface
 			$rows = $query->get();
 			*/
 
-
-
 			$index = '0';
 			$list =array ();
-			if (!empty($l_items))
-				// -----  "PDO" -----
-			{
+			if (!empty($l_items)){
 				foreach ($l_items as $key => $item)
 				{
 					if ($item['link']) {
@@ -376,7 +375,6 @@ class SearchDrivenListingsPlugin implements EventSubscriberInterface
 							$item['link'] 				= $f_href[0]->href;
 							if ($use_sharp_links){
 								$item['link'] 			.= '#dv-listings-item-' . $item['item_id']; }
-								//$item['link'] 			=."#dv-listings-item-" .$item['item_id'];}
 							}
 						else continue;
 					}
@@ -407,53 +405,77 @@ class SearchDrivenListingsPlugin implements EventSubscriberInterface
 		*/
 
 		if  ($use_category_area){
-			$query = $pdo->query('SELECT 	a.listing_id AS id,
-											a.title AS title,
-											a.description AS description,
-											a.modified_on AS date,
-											a.status AS category_status,
-											l.status AS listing_status
-											
-									FROM '. $db_name_listings_category .' a 
+			//SQLite
+			if ($b_sqlite){
+				$query = $pdo->query('SELECT 	a.listing_id AS id,
+												a.title AS title,
+												a.description AS description,
+												a.modified_on AS date,
+												a.status AS category_status,
+												l.status AS listing_status
+												
+										FROM '. $db_name_listings_category .' a 
 
 
-									INNER JOIN '. $db_name_listings_listing .' l
-									ON a.listing_id = l.id
+										INNER JOIN '. $db_name_listings_listing .' l
+										ON a.listing_id = l.id
 
-									WHERE category_status = '. self::STATUS_ACTIVE.' AND listing_status = '. self::STATUS_ACTIVE.' AND  ('. $where .')
-									GROUP BY a.title, a.description
-									ORDER BY ' . $orderBy .'
-									LIMIT 0 ,' . $limit . '
-									');
+										WHERE a.status = '. self::STATUS_ACTIVE.' AND l.status = '. self::STATUS_ACTIVE.' AND  ('. $where .')
+										GROUP BY a.title, a.description
+										ORDER BY ' . $orderBy .'
+										LIMIT 0 ,' . $limit . '
+										');
 
-			$category = $query->fetchall(\PDO::FETCH_ASSOC);
+				$category = $query->fetchall(\PDO::FETCH_ASSOC);
+			}
+			else {
+				//MySQL
+			    $category = App::db()->executeQuery('SELECT 	a.listing_id AS id,
+												a.title AS title,
+												a.description AS description,
+												a.modified_on AS date,
+												a.status AS category_status,
+												l.status AS listing_status
+												
+										FROM '. $db_name_listings_category .' a 
+
+
+										INNER JOIN '. $db_name_listings_listing .' l
+										ON a.listing_id = l.id
+
+										WHERE a.status = '. self::STATUS_ACTIVE.' AND l.status = '. self::STATUS_ACTIVE.' AND  ('. $where .')
+										GROUP BY a.title, a.description, a.id
+										ORDER BY ' . $orderBy .'
+										LIMIT 0 ,' . $limit . '
+										')->fetchAll();
+			}
 
 			$index = '0';
 			$list =array ();
 			if (!empty($category))
-			{
-				foreach ($category as $key => $item)
 				{
-					// this check user right on "page" 
-					$f_href = $this->find_url_page($item['id'], $b_sqlite);
-					if (!$f_href) continue; 
+					foreach ($category as $key => $item)
+					{
+						// this check user right on "page" 
+						$f_href = $this->find_url_page($item['id'], $b_sqlite);
+						if (!$f_href) continue; 
 
-					$list[$index]= new \stdclass();
-					$list[$index]->title 	 		= $item['title'];
-					$list[$index]->metadesc 		= '';
-					$list[$index]->metakey 			= '';
-					$list[$index]->created 			= date("Y-m-d H:i:s", $item['date']);
-					$list[$index]->text 	 		= App::content()->applyPlugins($item['description'], ['item' => $item, 'markdown' => $markdown]);
-					$list[$index]->section			= __('Listings:category'); // PAGE NOT HAVING A SECTION
-					$list[$index]->catslug 			= '';
-					$list[$index]->browsernav 		= '';
-					$list[$index]->href	 			= $f_href[0]->href;
-					$list[$index]->id		 		= $item['id'];
-					$index++;
+						$list[$index]= new \stdclass();
+						$list[$index]->title 	 		= $item['title'];
+						$list[$index]->metadesc 		= '';
+						$list[$index]->metakey 			= '';
+						$list[$index]->created 			= date("Y-m-d H:i:s", $item['date']);
+						$list[$index]->text 	 		= App::content()->applyPlugins($item['description'], ['item' => $item, 'markdown' => $markdown]);
+						$list[$index]->section			= __('Listings:category'); // PAGE NOT HAVING A SECTION
+						$list[$index]->catslug 			= '';
+						$list[$index]->browsernav 		= '';
+						$list[$index]->href	 			= $f_href[0]->href;
+						$list[$index]->id		 		= $item['id'];
+						$index++;
+					}
+				
+				if (count($list)) $rows[] = $list;
 				}
-			
-			if (count($list)) $rows[] = $list;
-			}
 			$limit -= count($list);
 		}
 		//
@@ -514,8 +536,7 @@ class SearchDrivenListingsPlugin implements EventSubscriberInterface
 
 		//Search on Page this content: (listings){"id":"1"}
 
-		if (!$b_sqlite) {$concatestr = 'CONCAT (\'%"defaults":{"id":\', cast(a.id as char),\'}%\')';}
-		else {$concatestr = '(\'%"defaults":{"id":\'|| cast(a.id as char) || \'}%\')';}
+		$concatestr = ($b_sqlite) ? '(\'%"defaults":{"id":\'|| cast(a.id as char) || \'}%\')' :  'CONCAT (\'%"defaults":{"id":\', cast(a.id as char),\'}%\')';
 		
 		$matches['v0'] = 'page';
 		$matches['v1'] = self::STATUS_PUBLISHED;	
@@ -526,7 +547,7 @@ class SearchDrivenListingsPlugin implements EventSubscriberInterface
 			->join('@system_node c', '(c.type LIKE :v0 AND c.data LIKE '.$concatestr.')', 'INNER')
 			->Where( $where .')', $matches)
 			->where(function ($query) { return $query->where('c.roles IS NULL')->whereInSet('c.roles', App::user()->roles, false, 'OR');})
-			->groupBy('a.id');
+			->groupBy('a.id, c.id');
 		$rows = $query->get();
 
 		$list = null;

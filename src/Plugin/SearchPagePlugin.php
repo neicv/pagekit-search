@@ -12,11 +12,14 @@ namespace Friendlyit\Search\Plugin;
 use Friendlyit\Search\Helpers\EXSearchHelper;
 use Friendlyit\Search\Event\SearchEvent;
 
-use Pagekit\Component\Database\ORM\Repository;
+//use Pagekit\Component\Database\ORM\Repository;
 use Pagekit\Event\EventSubscriberInterface;
 
 use Pagekit\Application as App;
 use Pagekit\Site\Model\Page;
+
+use PDO;
+use PDOException;
 
 /**
  * Page search plugin.
@@ -28,15 +31,6 @@ class SearchPagePlugin implements EventSubscriberInterface
 	const PAGES_PER_PAGE = 50;
 	
 	const STATUS_PUBLISHED = 1;
-	/**
-     * @var Repository
-     */
-    protected $pages;
-
-    /**
-     * @var Repository
-     */
-    protected $roles;
 	
     /**
      * SearchPage plugins callback.
@@ -91,18 +85,11 @@ class SearchPagePlugin implements EventSubscriberInterface
 		$areas  	= $parameters[3]; 
 		
 		$searchText = $text;
-		if (is_array($areas))
+
+		if (is_array($areas) && !array_intersect($areas, array_keys($this->onContentSearchAreasL())))
 		{
-			if (count($areas))
-			{
-				if (!array_intersect($areas, array_keys($this->onContentSearchAreasL())))
-				{
-					$a = array();
-					$event->setSearchData($a);
-					return $a;
-				}
-			}
-		} 
+			return array();
+		}
 
 		$text = trim($text);
 		if ($text == '')
@@ -114,8 +101,7 @@ class SearchPagePlugin implements EventSubscriberInterface
 		$text = stripslashes($text); 
 		$text = htmlspecialchars($text); 
 
-		if (App::db()->getDatabasePlatform()->getName() === 'sqlite') $b_sqlite = true; else $b_sqlite = false;
-	
+		(bool )$b_sqlite = App::db()->getDatabasePlatform()->getName() === 'sqlite';
 		
 		$matches = array();
 		switch ($phrase)
@@ -138,8 +124,8 @@ class SearchPagePlugin implements EventSubscriberInterface
 				{
 					$word = App::db()->quote('%' . $word . '%', false);
 					$wheres2 = array();
-					$wheres2[] = 'a.title LIKE '.$word;
-					$wheres2[] = 'a.content LIKE '.$word;
+					$wheres2[] = ($b_sqlite) ? 'php_nocase(a.title) LIKE php_nocase(' . $word . ')' : 'LOWER(a.title) LIKE LOWER(' . $word . ')';
+					$wheres2[] = ($b_sqlite) ? 'php_nocase(a.content) LIKE php_nocase(' . $word . ')' : 'LOWER(a.content) LIKE LOWER(' . $word . ')';
 					$wheres[] = implode(' OR ', $wheres2);
 				}
 
@@ -173,32 +159,91 @@ class SearchPagePlugin implements EventSubscriberInterface
 		}
 
 		$rows = array();
-			
-			$type = 'page';
-			$b = self::STATUS_PUBLISHED;
-			$aid = 'a.id'; 
-			
-			$id_string = '"defaults":{"id":';
-			$matches['v00'] = "%{$type}%";
-			//$matches['v01'] = "%{$id_string}%".$aid; 			
-			$matches['v0'] = "$b";			
-			
-			$where = '(c.status = :v0) AND (' . $where;
 
-			if (!$b_sqlite) {$concatestr = 'CONCAT (\'%"defaults":{"id":\', cast(a.id as char),\'}%\')';}
-			else {$concatestr = '(\'%"defaults":{"id":\'|| cast(a.id as char) || \'}%\')';}
+		if ($b_sqlite){
+			$mbString       = extension_loaded('mbstring');
+			$db 			= App::db()->getDatabase();
+
+			try{
+			$pdo = new PDO('sqlite:' . $db, null, null, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]); //pagekit.db
+			}catch(PDOException $pe){
+				echo $pe->getMessage();
+			}  
 			
-			//var_dump($dbname, $b_sqlite, $concatestr);
+			$prefix 					= App::db()->getPrefix();
+			$db_name_system_page 		= $prefix.'system_page'; 
+			$db_name_system_node 		= $prefix.'system_node'; 
+
+			//$pdo->sqliteCreateFunction('php_nocase', function($x) { return $x = $mbString ? mb_strtolower($x) : strtolower($x); });
+
+			if ($mbString ) {$pdo->sqliteCreateFunction('php_nocase', function($x) { return  mb_strtolower($x); });}
+			else {$pdo->sqliteCreateFunction('php_nocase', function($x) { return strtolower($x); });}
+		
+
+			$orders = explode(",", $order);
+			$orderBy ='';
+			if ($orders) {
+				$orderBy =  $orders[0] . $orders[1] ;
+			}	
+
+			$concatestr = '(\'%"defaults":{"id":\'|| cast(a.id as char) || \'}%\')';
+
+			/* self defined func regexp
+			$pdo->sqliteCreateFunction('regexp',
+			    function ($pattern, $data, $delimiter = '~', $modifiers = 'isuS')
+			    {
+			        if (isset($pattern, $data) === true)
+			        {
+			            return (preg_match(sprintf('%1$s%2$s%1$s%3$s', $delimiter, $pattern, $modifiers), $data) > 0);
+			        }
+			        
+			        return null;
+				}
+			);
+
+			/* Alternative self defined func regexp
+			DB::connection()->getPdo()->sqliteCreateFunction('REGEXP', function ($pattern, $value) {
+				mb_regex_encoding('UTF-8');
+				return (false !== mb_ereg($pattern, $value)) ? 1 : 0;
+			});
+
+			*/
+
+			$user = App::user()->roles;
+			$values = implode('|', (array)$user);
+
+			// use self defined func regexp
+			//$strf = 'regexp '.$pdo->quote("(^|,)({$values})($|,)").'';
+			//AND ((roles IS NULL) OR (roles '.$strf .'))
+
+			$strf = "OR ((',' || roles || ',') LIKE '%,$values,%')";
+
+			$query = $pdo->query(  'SELECT 	a.id AS page_id, a.title, a.content, a.data, c.id, c.type, c.data, c.link, c.status
+									FROM '. $db_name_system_page .' a 
+									INNER JOIN '. $db_name_system_node .' c
+									ON (c.type LIKE ("page") AND c.data LIKE '. $concatestr .')
+									WHERE c.status = '. self::STATUS_PUBLISHED.' AND  ('. $where .') 
+                                    
+                                    AND ((roles IS NULL) '.$strf.')
+									GROUP BY a.title, a.content, a.id, c.id
+									ORDER BY ' . $orderBy .'
+									LIMIT 0 ,' . $limit . '
+									');
+
+			$rows = $query->fetchall(\PDO::FETCH_ASSOC);
+			}
+		else{
+
+			$matches['v00'] = 'page';
+			$matches['v0'] = self::STATUS_PUBLISHED;			
+			$where = '(c.status = :v0) AND (' . $where;
+			$concatestr =  'CONCAT (\'%"defaults":{"id":\', cast(a.id as char),\'}%\')';
 			
 			$query = App::db()->createQueryBuilder()
 				->from('@system_page a')
 				->join('@system_node c', '(c.type LIKE :v00 AND c.data LIKE '.$concatestr.')', 'INNER')
 				->Where( $where .')', $matches);
 
-			$orders = explode(",", $order);
-			if ($orders) {
-				$query->orderBy($orders[0], $orders[1]);
-				}
 		    /**
 			* Creates and adds an "order by" to the query.
 			*
@@ -206,14 +251,17 @@ class SearchPagePlugin implements EventSubscriberInterface
 			* @param  string $order
 			* @return self
 			*/
+			$orders = explode(",", $order);
+			if ($orders) {
+				$query->orderBy($orders[0], $orders[1]);
+				}
 			$query->groupBy('a.title, a.content','a.id','c.id');
 			//$query->offset($page * $limit)->limit($limit);
 			$query->offset(0)->limit($limit);
 			$query->where(function ($query) { return $query->where('roles IS NULL')->whereInSet('roles', App::user()->roles, false, 'OR');});
 			$rows = $query->get();
-
-		$user = App::user();
-
+		}
+		//$user = App::user();
 		
 		$list = null;
 		$index = '0';
@@ -222,13 +270,15 @@ class SearchPagePlugin implements EventSubscriberInterface
 				foreach ($rows as $key => $item)
 				{
 					$list[$index]= new \stdclass();
+					// include oof title, but in Pagekit 1.0.13 NOT USE
+					//$page = Page::find($item['page_id']);
+					//($page->get('title')) ? $list[$index]->title = $item['title'] : $list[$index]->title = $index + 1;
 					$list[$index]->title 	 		= $item['title'];
 					$list[$index]->metadesc 		= '';
 					$list[$index]->metakey 			= '';
 					$list[$index]->created			= '';
-					//$list[$index]->text 	 		= $item['content'];
 					$list[$index]->text 	 		= App::content()->applyPlugins($item['content'], ['item' => $item, 'markdown' => $markdown]);
-					$list[$index]->section			= __('Uncategorised'); // PAGE NOT HAVING A SECTION
+					$list[$index]->section			= __('Pages');//__('Uncategorised'); // PAGE NOT HAVING A SECTION
 					$list[$index]->catslug 			= '';
 					$list[$index]->browsernav 		= '';
 					$list[$index]->href	 			= App::url($item['link']);

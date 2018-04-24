@@ -12,12 +12,14 @@ use Pagekit\Application as App;
 use Friendlyit\Search\Helpers\EXFilterInput;
 use Friendlyit\Search\Helpers\EXSearchHelper;// as EXSearchHelper;
 use Friendlyit\Search\Helpers\EXPagination;
-use Friendlyit\Search\SearchExtension;
-use Friendlyit\Search\Entity\Search;
+//use Friendlyit\Search\SearchExtension;
+//use Friendlyit\Search\Entity\Search;
 use Friendlyit\Search\Event\SearchEvent;
-use Pagekit\Framework\Controller\Controller;
-use Pagekit\Framework\Controller\Exception;
-use Pagekit\Extension\Extension;
+//use Pagekit\Framework\Controller\Controller;
+//use Pagekit\Framework\Controller\Exception;
+//use Pagekit\Extension\Extension;
+use Pagekit\Application\Exception;
+use Pagekit\Module\Module;
 
 
 
@@ -27,7 +29,7 @@ use Pagekit\Extension\Extension;
 class SiteController 
 {
 	/**
-     * @var SearchExtension
+     * @var Module
      */
     protected $extension;
 	
@@ -118,7 +120,6 @@ class SiteController
 	
     /**
      * Constructor.
-     * @param SearchExtension $extension
      */
     public function __construct()
     {
@@ -795,7 +796,8 @@ class SiteController
 					if ($mbString)
 					{
 						$highlightWordLen = mb_strlen($highlightWord);
-						$row              = mb_substr($row, 0, $pos) . $hl1 . mb_substr($row, $pos, $highlightWordLen)
+						$row              = mb_substr($row, 0, $pos) 
+						    . $hl1 . mb_substr($row, $pos, $highlightWordLen)
 							. $hl2 . mb_substr($row, $pos + $highlightWordLen);
 					}
 					else

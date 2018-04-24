@@ -3,8 +3,8 @@
  * @package     Pagekit Extension
  * @subpackage  Search content - EXSearchHelper
  *
- * @copyright   Copyright (C) 2016 Friendly-it, Inc. All rights reserved.
- * @copyright   Copyright (C) 2005 - 2014 Open Source Matters, Inc. All rights reserved.
+ * @copyright   Copyright (C) 2018 Friendly-it, Inc. All rights reserved.
+ * @copyright   Copyright (C) 2005 - 2018 Open Source Matters, Inc. All rights reserved.
  * @license     GNU General Public License version 2 or later; see LICENSE.txt
  */
 
@@ -160,29 +160,44 @@ class EXSearchHelper
 	 *
 	 * @return  boolean  True if search word should be limited; false otherwise.
 	 *
-	 * @since  0.1
+	 * @since  0.1.7.4
 	 */
 	public static function limitSearchWord(&$searchword)
 	{
-		$restriction = false;
-
-		$AddHelper = self::$nameClass;
+		$restriction 	= false;
+		$mbString    	= extension_loaded('mbstring');
+		$AddHelper 		= self::$nameClass;
 		// Limit searchword to a maximum of characters.
-		$upper_limit = $AddHelper::getUpperLimitSearchWord();
-		$lower_limit = $AddHelper::getLowerLimitSearchWord();
+		$upper_limit 	= $AddHelper::getUpperLimitSearchWord();
+		$lower_limit 	= $AddHelper::getLowerLimitSearchWord();
 
-		if (strlen($searchword) > $upper_limit)
-		{
-			$searchword  = substr($searchword, 0, $upper_limit - 1);
-			$restriction = true;
+		if ($mbString) {
+			if (mb_strlen($searchword) > $upper_limit)
+			{
+				$searchword  = mb_substr($searchword, 0, $upper_limit - 1);
+				$restriction = true;
+			}
+			// Searchword must contain a minimum of characters.
+			if ($searchword && mb_strlen($searchword) < $lower_limit)
+			{
+				$searchword  = '';
+				$restriction = true;
+			}
+		}
+		else {
+			if (strlen($searchword) > $upper_limit)
+			{
+				$searchword  = substr($searchword, 0, $upper_limit - 1);
+				$restriction = true;
+			}
+			// Searchword must contain a minimum of characters.
+			if ($searchword && strlen($searchword) < $lower_limit)
+			{
+				$searchword  = '';
+				$restriction = true;
+			}
 		}
 
-		// Searchword must contain a minimum of characters.
-		if ($searchword && strlen($searchword) < $lower_limit)
-		{
-			$searchword  = '';
-			$restriction = true;
-		}
 
 		return $restriction;
 	}
@@ -254,11 +269,20 @@ class EXSearchHelper
 			foreach ($terms as $term)
 			{
 				$term = self::remove_accents($term);
-				$term = mb_strtolower($term, 'UTF-8');
-				$text = mb_strtolower($text, 'UTF-8');
-				if (stristr($text, $term) !== false)
-				{
-					return true;
+				//$term = mb_strtolower($term, 'UTF-8');
+				//$text = mb_strtolower($text, 'UTF-8');
+				$mbString    	= extension_loaded('mbstring');
+				if ($mbString){
+					if (mb_stristr($text, $term) !== false)
+					{
+						return true;
+					}
+				}
+				else {
+					if (stristr($text, $term) !== false)
+					{
+						return true;
+					}
 				}
 			}
 		}
@@ -292,51 +316,97 @@ class EXSearchHelper
 	 *
 	 * @return  string
 	 *
-	 * @since   0.1
+	 * @since   0.1.7.4
 	 */
 	public static function _smartSubstr($text, $searchword)
 	{
-		$AddHelper = self::$nameClass;
+		$mbString    = extension_loaded('mbstring');
+		$AddHelper 	 = self::$nameClass;
 		$length      = $AddHelper::getSearchDisplayedCharactersNumber();
 		$ltext       = self::remove_accents($text);
-		$textlen     = strlen($ltext);
-		$lsearchword = strtolower(self::remove_accents($searchword));
-		$wordfound   = false;
-		$pos         = 0;
 
-		while ($wordfound === false && $pos < $textlen)
-		{
-			if (($wordpos = @strpos($ltext, ' ', $pos + $length)) !== false)
+		if ($mbString){
+			$textlen     = mb_strlen($ltext);
+			$lsearchword = mb_strtolower(self::remove_accents($searchword));
+			$wordfound   = false;
+			$pos         = 0;
+	
+			while ($wordfound === false && $pos < $textlen)
 			{
-				$chunk_size = $wordpos - $pos;
+				if (($wordpos = @mb_strpos($ltext, ' ', $pos + $length)) !== false)
+				{
+					$chunk_size = $wordpos - $pos;
+				}
+				else
+				{
+					$chunk_size = $length;
+				}
+	
+				$chunk     = mb_substr($ltext, $pos, $chunk_size);
+				$wordfound = mb_strpos(mb_strtolower($chunk), $lsearchword);
+	
+				if ($wordfound === false)
+				{
+					$pos += $chunk_size + 1;
+				}
+			}
+	
+			if ($wordfound !== false)
+			{
+				return (($pos > 0) ? '...&#160;' : '') . mb_substr($text, $pos, $chunk_size) . '&#160;...';
 			}
 			else
 			{
-				$chunk_size = $length;
-			}
-
-			$chunk     = substr($ltext, $pos, $chunk_size);
-			$wordfound = strpos(strtolower($chunk), $lsearchword);
-
-			if ($wordfound === false)
-			{
-				$pos += $chunk_size + 1;
+				if (($wordpos = @mb_strpos($text, ' ', $length)) !== false)
+				{
+					return mb_substr($text, 0, $wordpos) . '&#160;...';
+				}
+				else
+				{
+					return mb_substr($text, 0, $length);
+				}
 			}
 		}
+		else {
+			$textlen     = strlen($ltext);
+			$lsearchword = strtolower(self::remove_accents($searchword));
+			$wordfound   = false;
+			$pos         = 0;
 
-		if ($wordfound !== false)
-		{
-			return (($pos > 0) ? '...&#160;' : '') . substr($text, $pos, $chunk_size) . '&#160;...';
-		}
-		else
-		{
-			if (($wordpos = @strpos($text, ' ', $length)) !== false)
+			while ($wordfound === false && $pos < $textlen)
 			{
-				return substr($text, 0, $wordpos) . '&#160;...';
+				if (($wordpos = @strpos($ltext, ' ', $pos + $length)) !== false)
+				{
+					$chunk_size = $wordpos - $pos;
+				}
+				else
+				{
+					$chunk_size = $length;
+				}
+
+				$chunk     = substr($ltext, $pos, $chunk_size);
+				$wordfound = strpos(strtolower($chunk), $lsearchword);
+
+				if ($wordfound === false)
+				{
+					$pos += $chunk_size + 1;
+				}
+			}
+
+			if ($wordfound !== false)
+			{
+				return (($pos > 0) ? '...&#160;' : '') . substr($text, $pos, $chunk_size) . '&#160;...';
 			}
 			else
 			{
-				return substr($text, 0, $length);
+				if (($wordpos = @strpos($text, ' ', $length)) !== false)
+				{
+					return substr($text, 0, $wordpos) . '&#160;...';
+				}
+				else
+				{
+					return substr($text, 0, $length);
+				}
 			}
 		}
 	}
