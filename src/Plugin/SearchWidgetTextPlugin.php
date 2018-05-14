@@ -1,7 +1,7 @@
 <?php
 /**
  * @package     Pagekit Extension
- * @subpackage  Search.content - Page
+ * @subpackage  Search.content - Widget/Text
  *
  * @copyright   Copyright (C) 2016 - 2018 Friendly-it, Inc. All rights reserved.
  * @license     GNU General Public License version 2 or later; see LICENSE.txt
@@ -12,11 +12,12 @@ namespace Friendlyit\Search\Plugin;
 use Friendlyit\Search\Helpers\EXSearchHelper;
 use Friendlyit\Search\Event\SearchEvent;
 
-//use Pagekit\Component\Database\ORM\Repository;
 use Pagekit\Event\EventSubscriberInterface;
 
 use Pagekit\Application as App;
-use Pagekit\Site\Model\Page;
+use Pagekit\Site\Model\Node;
+use Pagekit\User\Model\Role;
+use Pagekit\Widget\Model\Widget;
 
 use PDO;
 use PDOException;
@@ -26,7 +27,7 @@ use PDOException;
  *
  */
 
-class SearchPagePlugin implements EventSubscriberInterface
+class SearchWidgetTextPlugin implements EventSubscriberInterface
 {
 	const PAGES_PER_PAGE = 50;
 	
@@ -45,19 +46,19 @@ class SearchPagePlugin implements EventSubscriberInterface
 	public function onContentSearchAreas(SearchEvent $event)
 	{
 		static $areas = array();
-		$areas = ['pages' => __('Pages')];
+		$areas = ['widget-txt' => __('Widget')];
 		$event->setSearchArray($areas);
 	}
 
 	public function onContentSearchAreasL()
 	{
 		static $areas = array();
-		$areas = ['pages' => __('Pages')]; 
+		$areas = ['widget-txt' => __('Widget')]; 
 		return $areas;
 	}
 	
 	/**
-	 * Search content (articles).
+	 * Search content (Widget - Text).
 	 * The SQL must return the following fields that are used in a common display
 	 * routine: href, title, section, created, text, browsernav.
 	 *
@@ -104,15 +105,20 @@ class SearchPagePlugin implements EventSubscriberInterface
 		$text = stripslashes($text); 
 		$text = htmlspecialchars($text); 
 
+		
+
 		$matches = array();
 		switch ($phrase)
 		{
 			case 'exact':
-				
+				$text2 = json_encode(str_split($text), JSON_UNESCAPED_UNICODE);
 				$text =App::db()->quote('%' . $text . '%', false);
+				$text2 =App::db()->quote('%' . $text2 . '%', false);
 				$wheres2 = array();
 				$wheres2[] = 'a.title LIKE '.$text;
-				$wheres2[] = 'a.content LIKE '. $text;
+				$wheres2[] = 'a.data LIKE '. $text;
+				$wheres2[] = 'a.title LIKE '.$text2;
+				$wheres2[] = 'a.data LIKE '. $text2;
 				$where = '(' . implode(') OR (', $wheres2) . ')';
 				break;
 
@@ -123,10 +129,14 @@ class SearchPagePlugin implements EventSubscriberInterface
 				$wheres = array();
 				foreach ($words as $word)
 				{
+					$word2 = json_encode(str_split($word), JSON_UNESCAPED_UNICODE);
 					$word = App::db()->quote('%' . $word . '%', false);
+					$word2 = App::db()->quote('%' . $word2 . '%', false);
 					$wheres2 = array();
 					$wheres2[] = ($b_sqlite) ? 'php_nocase(a.title) LIKE php_nocase(' . $word . ')' : 'LOWER(a.title) LIKE LOWER(' . $word . ')';
-					$wheres2[] = ($b_sqlite) ? 'php_nocase(a.content) LIKE php_nocase(' . $word . ')' : 'LOWER(a.content) LIKE LOWER(' . $word . ')';
+					$wheres2[] = ($b_sqlite) ? 'php_nocase(a.data) LIKE php_nocase(' . $word . ')' : 'LOWER(a.data) LIKE LOWER(' . $word . ')';
+					$wheres2[] = 'a.title LIKE ' . $word2 . '';
+					$wheres2[] = 'a.data LIKE ' . $word2 . '';
 					$wheres[] = implode(' OR ', $wheres2);
 				}
 
@@ -172,7 +182,7 @@ class SearchPagePlugin implements EventSubscriberInterface
 			}  
 			
 			$prefix 					= App::db()->getPrefix();
-			$db_name_system_page 		= $prefix.'system_page'; 
+			$db_name_system_widget 		= $prefix.'system_widget'; 
 			$db_name_system_node 		= $prefix.'system_node'; 
 
 			$mbString ? $pdo->sqliteCreateFunction('php_nocase', function($x) { return  mb_strtolower($x); }) :
@@ -184,65 +194,39 @@ class SearchPagePlugin implements EventSubscriberInterface
 				$orderBy =  $orders[0] . $orders[1] ;
 			}	
 
-			$concatestr = '(\'%"defaults":{"id":\'|| cast(a.id as char) || \'}%\')';
-
-			/* self defined func regexp
-			$pdo->sqliteCreateFunction('regexp',
-			    function ($pattern, $data, $delimiter = '~', $modifiers = 'isuS')
-			    {
-			        if (isset($pattern, $data) === true)
-			        {
-			            return (preg_match(sprintf('%1$s%2$s%1$s%3$s', $delimiter, $pattern, $modifiers), $data) > 0);
-			        }
-			        
-			        return null;
-				}
-			);
-
-			/* Alternative self defined func regexp
-			DB::connection()->getPdo()->sqliteCreateFunction('REGEXP', function ($pattern, $value) {
-				mb_regex_encoding('UTF-8');
-				return (false !== mb_ereg($pattern, $value)) ? 1 : 0;
-			});
-
-			*/
-
 			$user = App::user()->roles;
 			$values = implode('|', (array)$user);
+			$strf_a = "OR ((',' || a.roles || ',') LIKE '%,$values,%')";
+			$strf_c = "OR ((',' || c.roles || ',') LIKE '%,$values,%')";
+			$strf_0 = "(a.nodes IS NULL) OR (',' || a.nodes || ',') LIKE '%,' || c.id || ',%'";
 
-			// use self defined func regexp
-			//$strf = 'regexp '.$pdo->quote("(^|,)({$values})($|,)").'';
-			//AND ((roles IS NULL) OR (roles '.$strf .'))
-
-			$strf = "OR ((',' || roles || ',') LIKE '%,$values,%')";
-
-			$query = $pdo->query(  'SELECT 	a.id AS page_id, a.title, a.content, a.data, c.id, c.type, c.data, c.link, c.status
-									FROM '. $db_name_system_page .' a 
+			$query = $pdo->query(  'SELECT 	a.id AS widget_id, a.title AS widget_title, a.data, c.id AS node_id, c.title AS node_title, c.link
+									FROM '. $db_name_system_widget .' a 
 									INNER JOIN '. $db_name_system_node .' c
-									ON (c.type LIKE ("page") AND c.data LIKE '. $concatestr .')
-									WHERE c.status = '. self::STATUS_PUBLISHED.' AND  ('. $where .') 
-                                    
-                                    AND ((roles IS NULL) '.$strf.')
-									GROUP BY a.title, a.content, a.id, c.id
+
+									ON ((c.type LIKE "page" OR c.type LIKE "blog")  AND a.type LIKE ("system/text") AND  '.$strf_0.' )
+									WHERE c.status = '. self::STATUS_PUBLISHED.'  AND a.status = '. self::STATUS_PUBLISHED.'  AND  ('. $where .')
+									AND ((a.roles IS NULL) '.$strf_a.') 
+									AND ((c.roles IS NULL) '.$strf_c.')
+									GROUP BY a.title, a.data, a.id, c.id
 									ORDER BY ' . $orderBy .'
 									LIMIT 0 ,' . $limit . '
 									');
 
 			$rows = $query->fetchall(\PDO::FETCH_ASSOC);
 			}
+
 		else{
 
-			$matches['v00'] = 'page';
-			$matches['v0'] = self::STATUS_PUBLISHED;			
-			$where = '(c.status = :v0) AND (' . $where;
-			$concatestr =  'CONCAT (\'%"defaults":{"id":\', cast(a.id as char),\'}%\')';
+			$strf_0 = "(a.nodes IS NULL) OR (',' || a.nodes || ',') LIKE '%,' || c.id || ',%'";
 			
 			$query = App::db()->createQueryBuilder()
-				->select('a.id AS page_id, a.title, a.content, a.data, c.id, c.type, c.data, c.link, c.status')
-				->from('@system_page a')
-				->join('@system_node c', '(c.type LIKE :v00 AND c.data LIKE '.$concatestr.')', 'INNER')
-				->Where( $where .')', $matches);
-
+				->select( 'a.id AS widget_id, a.title AS widget_title, a.data, c.id AS node_id, c.title AS node_title, c.link')
+				->from('@system_widget a')
+				->join('@system_node c', '((c.type LIKE "page" OR c.type LIKE "blog")  AND a.type LIKE ("system/text") AND  '.$strf_0.')', 'INNER')
+				->where( 'c.status = '. self::STATUS_PUBLISHED.'  AND a.status = '. self::STATUS_PUBLISHED.'  AND  ('. $where .')');
+			
+			//$query->where(function ($query) { return $query->where('a.nodes IS NULL')->whereInSet('a.nodes', 'c.id', false, 'OR');});
 		    /**
 			* Creates and adds an "order by" to the query.
 			*
@@ -255,35 +239,48 @@ class SearchPagePlugin implements EventSubscriberInterface
 				$query->orderBy($orders[0], $orders[1]);
 			}
 		
-			$query->groupBy('a.title, a.content','a.id','c.id');
-			//$query->offset($page * $limit)->limit($limit);
+			$query->groupBy('a.title', 'a.data','a.id','c.id');
 			$query->offset(0)->limit($limit);
-			$query->where(function ($query) { return $query->where('roles IS NULL')->whereInSet('roles', App::user()->roles, false, 'OR');});
+			$query->where(function ($query) { return $query->where('a.roles IS NULL')->whereInSet('a.roles', App::user()->roles, false, 'OR');});
+			$query->where(function ($query) { return $query->where('c.roles IS NULL')->whereInSet('c.roles', App::user()->roles, false, 'OR');});
 			$rows = $query->get();
 		}
-		//$user = App::user();
 		
 		$list = null;
 		$index = '0';
 		if (!empty($rows))
 			{
+				$last_id = 0;
 				foreach ($rows as $key => $item)
 				{
+
+					// NEED COMPACT RESULT
+					// LOOP ON Widget ID
+					// Compact ID Nodes
+					//  $page = $this->getPage($node->get('defaults.id', 0));
+
+					if ($last_id === $item['widget_id']) continue;
+
 					$list[$index]= new \stdclass();
+
+					$widget = Widget::find($item['widget_id']);
+					//$node = Node::find($item['node_id']);
+					//$page = Page::find($node->get('defaults.id', 0));
+
 					// include support on/off title, but in Pagekit 1.0.13 NOT USE
 					//$page = Page::find($item['page_id']);
 					//($page->get('title')) ? $list[$index]->title = $item['title'] : $list[$index]->title = $index + 1;
-					$list[$index]->title 	 		= $item['title'];
+					$list[$index]->title 	 		= $item['widget_title'];
 					$list[$index]->metadesc 		= '';
 					$list[$index]->metakey 			= '';
 					$list[$index]->created			= '';
-					$page = Page::find($item['page_id']);
-					//$list[$index]->text 	 		= App::content()->applyPlugins($item['content'], ['item' => $item, 'markdown' => $markdown]);
-					$list[$index]->text 	 		= App::content()->applyPlugins($item['content'], ['item' => $item, 'markdown' => $page->get('markdown')]);
-					$list[$index]->section			= __('Pages');//__('Uncategorised'); // PAGE NOT HAVING A SECTION
+
+					$list[$index]->text 	 		= App::content()->applyPlugins($widget->get('content'), ['widget' => $widget, 'markdown' => $widget->get('markdown')]);
+					$list[$index]->section			= __('Widget');
 					$list[$index]->catslug 			= '';
 					$list[$index]->browsernav 		= '';
 					$list[$index]->href	 			= App::url($item['link']);
+					$last_id = $item['widget_id'];
 					$index++;
 				}
 			$rows = array();
@@ -322,8 +319,8 @@ class SearchPagePlugin implements EventSubscriberInterface
     public function subscribe()
     {
         return [
-			'search.onContentSearchAreas'	=> ['onContentSearchAreas', 5],
-			'search.onContentSearch'		=> ['onContentSearch', 5]
+			'search.onContentSearchAreas'	=> ['onContentSearchAreas', 6],
+			'search.onContentSearch'		=> ['onContentSearch', 6]
         ];
     }
 }

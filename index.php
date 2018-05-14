@@ -2,6 +2,7 @@
 //namespace Pagekit\Site;
 use Friendlyit\Search\Plugin\SearchContentPlugin;
 use Friendlyit\Search\Plugin\SearchPagePlugin;
+use Friendlyit\Search\Plugin\SearchWidgetTextPlugin;
 use Friendlyit\Search\Plugin\SearchBlogPlugin;
 use Friendlyit\Search\Plugin\SearchDrivenListingsPlugin;
 use Pagekit\Application as App;
@@ -172,7 +173,8 @@ return [
 			}
 			
 			$app->subscribe(
-			    new SearchPagePlugin
+                new SearchPagePlugin,
+                new SearchWidgetTextPlugin
 			);
         }, 
 		

@@ -63,3 +63,14 @@
     </div>
 
 </section>
+
+<h4><i class="uk-icon-angle-right uk-text-primary"></i> {{ 'Extra' | trans }}</h4>
+<p>
+
+The original published extension have <strong><a :href="'https://github.com/DrivenNetwork/pagekit-listings/issues/13'" title="issue">issue #13</a> </strong>
+<p class="important">
+'Getting datetime error when installing with Pagekit'
+</p>
+I suggest using this <a :href="'https://github.com/neicv/pagekit-listings/blob/master/driven-listings.zip'" title="solution">solution</a>  to avoid this problem.
+
+</p>

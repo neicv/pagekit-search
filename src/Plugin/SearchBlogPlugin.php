@@ -15,9 +15,12 @@ use Friendlyit\Search\Event\SearchEvent;
 use Pagekit\Blog\Model\Post;
 use Pagekit\Blog\Model\Comment;
 
-use Pagekit\Component\Database\ORM\Repository;
+//use Pagekit\Component\Database\ORM\Repository;
 use Pagekit\Event\EventSubscriberInterface;
 use Pagekit\Application as App;
+
+use PDO;
+use PDOException;
 
 /**
  * Blog search plugin.
@@ -27,20 +30,6 @@ use Pagekit\Application as App;
 class SearchBlogPlugin implements EventSubscriberInterface
 {
 	const PAGES_PER_PAGE = 50;
-	/**
-     * @var Repository
-     */
-    protected $posts;
-
-	/**
-     * @var Repository
-     */
-	 
-    protected $comments;
-    /**
-     * @var Repository
-     */
-    protected $roles;
 	
     /**
      * Content plugins callback.
@@ -92,7 +81,9 @@ class SearchBlogPlugin implements EventSubscriberInterface
 	public function onContentSearch(SearchEvent $event)
 	{ 
 		if (!$blog = App::module('blog')) {return array();}
-		
+
+		(bool )$b_sqlite = App::db()->getDatabasePlatform()->getName() === 'sqlite';
+
 		$params = App::module('friendlyit/search')->config('defaults');
 		$limit 		= isset($params['limit_search_result']) ? $params['limit_search_result'] : self::PAGES_PER_PAGE;
 		$markdown 	= isset($params['markdown_enabled']) ? $params['markdown_enabled'] : true ;
@@ -105,31 +96,22 @@ class SearchBlogPlugin implements EventSubscriberInterface
 		$areas  	= $parameters[3]; 
 		
 		$searchText = $text;
-		if (is_array($areas))
-		{
-			if (count($areas))
-			{
-				if (!array_intersect($areas, array_keys($this->onContentSearchAreasL())))
-				{
-					$a = array();
-					$event->setSearchData($a);
-					return $a;
-				}
-			}
-		} 
-		
-		if (App::db()->getDatabasePlatform()->getName() === 'sqlite') $b_sqlite = true; else $b_sqlite = false;
-		
-		$text = trim($text);
-		if ($text == '')
+
+		if (is_array($areas) && !array_intersect($areas, array_keys($this->onContentSearchAreasL())))
 		{
 			return array();
 		}
-	
+
+		$text = trim($text);
+
+		if ($text === '')
+		{
+			return array();
+		}
+
 		$text = EXSearchHelper::strip_data(trim($text));
 		$text = stripslashes($text); 
 		$text = htmlspecialchars($text); 
-
 
 		$matches = array();
 		switch ($phrase)
@@ -153,9 +135,9 @@ class SearchBlogPlugin implements EventSubscriberInterface
 				{
 					$word = App::db()->quote('%' . $word . '%', false);
 					$wheres2 = array();
-					$wheres2[] = 'a.title LIKE '	. $word;
-					$wheres2[] = 'a.excerpt LIKE '	. $word;
-					$wheres2[] = 'a.content LIKE '	. $word;
+					$wheres2[] = ($b_sqlite) ? 'php_nocase(a.title) LIKE php_nocase(' . $word . ')' : 'LOWER(a.title) LIKE LOWER(' . $word . ')';
+					$wheres2[] = ($b_sqlite) ? 'php_nocase(a.excerpt) LIKE php_nocase(' . $word . ')' : 'LOWER(a.excerpt) LIKE LOWER(' . $word . ')';
+					$wheres2[] = ($b_sqlite) ? 'php_nocase(a.content) LIKE php_nocase(' . $word . ')' : 'LOWER(a.content) LIKE LOWER(' . $word . ')';
 					$wheres[] = implode(' OR ', $wheres2);
 				}
 				$where = '(' . implode(($phrase == 'all' ? ') AND (' : ') OR ('), $wheres) . ')';
@@ -188,40 +170,88 @@ class SearchBlogPlugin implements EventSubscriberInterface
 
 		$rows = array();
 		
+		if ($b_sqlite){
+			// Prepare SQLite
+			$mbString       = extension_loaded('mbstring');
+			$db 			= App::db()->getDatabase();
 
-		$where = '(a.status = :v0 AND a.date < :v00) AND (' . $where;
-		$matches['v0'] = Post::STATUS_PUBLISHED;//"$b";	
-		$matches['v00'] = new \DateTime;				
-
-		// -----  "PDO" -----
-		
-		if (!$b_sqlite) $concatestr = 'CONCAT (a.excerpt, a.content) AS text';
-		else $concatestr = ' (a.excerpt || a.content) AS text';
-		
-		$query = App::db()->createQueryBuilder()
-			->from('@blog_post a')
-		
-			->select('a.title title, a.id id, a.date date')
-			->select($concatestr)
-			->where( $where .')', $matches)
-			->groupBy('a.title', 'a.content', 'a.excerpt', 'a.id');
+			try{
+			$pdo = new PDO('sqlite:' . $db, null, null, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]); //pagekit.db
+			}catch(PDOException $pe){
+				echo $pe->getMessage();
+			}  
 			
-		/* $limit = self::PAGES_PER_PAGE;
-		$count = $query->count();
-		$total = ceil($count / $limit);
-		$page  = max(0, min($total - 1, $page)); */
-	
+			$prefix 					= App::db()->getPrefix();
+			$db_name_blog_post	 		= $prefix.'blog_post'; 
+			$db_name_blog_comment		= $prefix.'blog_comment'; 
 
-			
-		$orders = explode(",", $order);
-		if ($orders) {
-			$query->orderBy($orders[0], $orders[1]);
+			$mbString ? $pdo->sqliteCreateFunction('php_nocase', function($x) { return  mb_strtolower($x); }) :
+			$pdo->sqliteCreateFunction('php_nocase', function($x) { return strtolower($x); });
+
+			$orders = explode(",", $order);
+			$orderBy ='';
+			if ($orders) {
+				$orderBy =  $orders[0] . $orders[1] ;
+			}	
+
+			//$now 		= new \DateTime::ATOM;
+			$now		= new \DateTime;
+			$now  		= App::db()->quote($now->format('Y-m-d H:i:s'));
+			$user 		= App::user()->roles;
+			$values		= implode('|', (array)$user);
+
+			$concatestr = ' (a.excerpt || a.content) AS text';
+			$strf = "OR ((',' || roles || ',') LIKE '%,$values,%')";
+
+			// SQLite Query
+			$query = $pdo->query(  'SELECT 	a.title title, a.id id, a.date date, '.$concatestr.'
+									
+									FROM '. $db_name_blog_post .' a 
+
+									WHERE a.status = '. Post::STATUS_PUBLISHED.' AND a.date < '.$now.' AND '. $where .' 
+                                    
+                                    AND ((roles IS NULL) '.$strf.')
+									GROUP BY a.title, a.content, a.excerpt, a.id
+									ORDER BY ' . $orderBy .'
+									LIMIT 0 ,' . $limit . '
+									');
+
+			$rows = $query->fetchall(\PDO::FETCH_ASSOC);
 			}
-		$query->offset(0)->limit($limit);
+
+		else{
+
+			// MySQL Query
+			$where = '(a.status = :v0 AND a.date < :v00) AND (' . $where;
+			$matches['v0'] = Post::STATUS_PUBLISHED;	
+			$matches['v00'] = new \DateTime;				
+
+			$concatestr = 'CONCAT (a.excerpt, a.content) AS text';
+			
+			$query = App::db()->createQueryBuilder()
+				->from('@blog_post a')
+			
+				->select('a.title title, a.id id, a.date date')
+				->select($concatestr)
+				->where( $where .')', $matches)
+				->groupBy('a.title', 'a.content', 'a.excerpt', 'a.id');
+				
+			/* $limit = self::PAGES_PER_PAGE;
+			$count = $query->count();
+			$total = ceil($count / $limit);
+			$page  = max(0, min($total - 1, $page)); */
+				
+			$orders = explode(",", $order);
+			if ($orders) {
+				$query->orderBy($orders[0], $orders[1]);
+				}
+			$query->offset(0)->limit($limit);
+			
+			$query->where(function ($query) { return $query->where('roles IS NULL')->whereInSet('roles', App::user()->roles, false, 'OR');});
+
+			$rows = $query->get();
+		}
 		
-		$query->where(function ($query) { return $query->where('roles IS NULL')->whereInSet('roles', App::user()->roles, false, 'OR');});
-		
-		$rows = $query->get();
 		$limit -= count($rows);
 		
 		$index = '0';
@@ -235,9 +265,10 @@ class SearchBlogPlugin implements EventSubscriberInterface
 					$list[$index]->metadesc 		= '';
 					$list[$index]->metakey 			= '';
 					$list[$index]->created			= $item['date'];
-					//$list[$index]->text 	 		= $item['text'];
-					$list[$index]->text 	 		= App::content()->applyPlugins($item['text'], ['item' => $item, 'markdown' => $markdown]);
-					$list[$index]->section			= __('Blog'); // PAGE NOT HAVING A SECTION
+					//$list[$index]->text 	 		= App::content()->applyPlugins($item['text'], ['item' => $item, 'markdown' => $markdown]);
+					(int) $post = Post::find($item['id']); 
+					$list[$index]->text 	 		= App::content()->applyPlugins($item['text'], ['item' => $item, 'markdown' => $post->get('markdown')]);
+					$list[$index]->section			= __('Blog'); 
 					$list[$index]->catslug 			= '';
 					$list[$index]->browsernav 		= '';
 					$list[$index]->href	 			= App::url('@blog/id', ['id' => $item['id']], true);
@@ -272,7 +303,8 @@ class SearchBlogPlugin implements EventSubscriberInterface
 					{
 						$wheres2 = array();
 						$word = App::db()->quote('%' . $word . '%', false);
-						$wheres2[] = 'content LIKE '. $word;
+						//$wheres2[] = 'content LIKE '. $word;
+						$wheres2[] = ($b_sqlite) ? 'php_nocase(content) LIKE php_nocase(' . $word . ')' : 'LOWER(content) LIKE LOWER(' . $word . ')';
 						$wheres[] = implode(' OR ', $wheres2);
 					}
 					$where = '(' . implode(($phrase == 'all' ? ') AND (' : ') OR ('), $wheres) . ')';
@@ -297,24 +329,47 @@ class SearchBlogPlugin implements EventSubscriberInterface
 			$posts->where(function ($query) { return $query->where('roles IS NULL')->whereInSet('roles', App::user()->roles, false, 'OR');});
 			$posts = $posts->get();
 		
-			$where = '(status = :v0) AND (' . $where;
-			$matches['v0'] = Comment::STATUS_APPROVED;//"$b";	
-
 			if ($posts) {
-				$pending = App::db()->createQueryBuilder()
-					->from('@blog_comment')
-					->select('id, post_id, content, created')
-					->where( $where .')', $matches)
-					->whereIn('post_id', array_keys($posts))
-					//->offset($page * $limit)->limit($limit)
-					->offset(0)->limit($limit)
-					->groupBy('post_id','content','id');
+				if ($b_sqlite){
+
+					// SQLite Query
+					if (is_array(array_keys($posts))) {
+
+						$values = implode(', ', array_map("self::sl_quote", array_keys($posts)));
+						
+						$pending = $pdo->query(  'SELECT 	id, post_id, content, created
+														
+												FROM '. $db_name_blog_comment .' a 
+
+												WHERE a.status = '. Comment::STATUS_APPROVED.' AND '. $where .' AND (post_id IN ('.$values.'))
+												GROUP BY post_id, content, id
+												LIMIT 0 ,' . $limit . '
+												');
+
+						$pending = $pending->fetchall(\PDO::FETCH_ASSOC);
+						}
+						// no Post
+					}
+				else {
+
+					$where = '(status = :v0) AND (' . $where;
+					$matches['v0'] = Comment::STATUS_APPROVED;//"$b";	
+					$pending = App::db()->createQueryBuilder()
+						->from('@blog_comment')
+						->select('id, post_id, content, created')
+						->where( $where .')', $matches)
+						->whereIn('post_id', array_keys($posts))
+						//->offset($page * $limit)->limit($limit)
+						->offset(0)->limit($limit)
+						->groupBy('post_id','content','id');
 
 					$pending = $pending->get();
-			} else {
+				} 
+			}
+			else {
 				$pending = [];
 			}
-
+			
 		
 			$list = null;
 			$index = '0';
@@ -323,7 +378,8 @@ class SearchBlogPlugin implements EventSubscriberInterface
 				{
 					foreach ($pending as $key => $item)
 					{
-						if (!$this->has_same_id($item['post_id'], $rows)){
+						// Options need ?????
+						//if (!$this->has_same_id($item['post_id'], $rows)){
 
 						$list[$index]= new \stdclass();
 						
@@ -331,7 +387,6 @@ class SearchBlogPlugin implements EventSubscriberInterface
 						$list[$index]->metadesc 		= '';
 						$list[$index]->metakey 			= '';
 						$list[$index]->created			= $item['created'];
-						//$list[$index]->text 	 		= $item['content'];
 						$list[$index]->text 	 		= App::content()->applyPlugins($item['content'], ['item' => $item, 'markdown' => $markdown]);
 						$list[$index]->section			= __('Blog comments'); // PAGE NOT HAVING A SECTION
 						$list[$index]->catslug 			= '';
@@ -340,10 +395,10 @@ class SearchBlogPlugin implements EventSubscriberInterface
 						//$list[$index]->href	 			= '@blog/'.$item['post_id'].'#comment-'.$item['id'];
 						$list[$index]->id		 		= $item['post_id'];
 						$index++;
-						}
+						//}
 					}
 				if (!empty($list)){
-					$rows = array();
+					//$rows = array();
 					$rows[] = $list;
 					}
 				}
@@ -382,8 +437,8 @@ class SearchBlogPlugin implements EventSubscriberInterface
     public function subscribe()
     {
         return [
-			'search.onContentSearchAreas'	=> ['onContentSearchAreas', 6],
-			'search.onContentSearch'		=> ['onContentSearch', 6]
+			'search.onContentSearchAreas'	=> ['onContentSearchAreas', 7],
+			'search.onContentSearch'		=> ['onContentSearch', 7]
         ];
 
     }
@@ -395,6 +450,10 @@ class SearchBlogPlugin implements EventSubscriberInterface
 			if ($row['id'] == $id) return true;
 		}
 	return false;
+	}
+
+	private function sl_quote($value_q){
+		return App::db()->quote($value_q);	
 	}
 
 }

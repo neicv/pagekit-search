@@ -21,26 +21,14 @@ The Search Statistics screen allows you to see how many searches were done for e
 
 <h4><i class="uk-icon-angle-right uk-text-primary"></i> {{ 'Usage' | trans }}</h4>
 <p>
-    To display one or many listings on a page copy and paste the PLUGIN CODE for each list on your Pagekit page. The plugin code for each list can be found on the <a :href="'../listings'" title=""Listings Page">Listings</a> page.
+If you wanna make "search page" - go to <strong>`Site -> Add new Page -> Link` </strong>in the Pagekit admin area.
+<br>
+And make link to "/search".
+<br>
+Or / And u can use "Search widget" 
 
 </p>
 
-<div class="uk-panel dr-pre uk-margin-bottom">
-    <span class="uk-panel-badge uk-badge">default</span>
-    <div class="pre" v-pre>
-        (listings){"id":"1"}
-    </div>
-</div>
-
-<div class="uk-panel dr-pre uk-margin-bottom">
-    <span class="uk-panel-badge uk-badge">options</span>
-    <div class="pre" v-pre>
-        (listings){ "id":"1",
-        "listingTitle":"uk-hidden",
-        "listingDescription":"uk-text-center"
-        }
-    </div>
-</div>
 
 <hr/>
 
