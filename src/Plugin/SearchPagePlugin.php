@@ -186,27 +186,6 @@ class SearchPagePlugin implements EventSubscriberInterface
 
 			$concatestr = '(\'%"defaults":{"id":\'|| cast(a.id as char) || \'}%\')';
 
-			/* self defined func regexp
-			$pdo->sqliteCreateFunction('regexp',
-			    function ($pattern, $data, $delimiter = '~', $modifiers = 'isuS')
-			    {
-			        if (isset($pattern, $data) === true)
-			        {
-			            return (preg_match(sprintf('%1$s%2$s%1$s%3$s', $delimiter, $pattern, $modifiers), $data) > 0);
-			        }
-			        
-			        return null;
-				}
-			);
-
-			/* Alternative self defined func regexp
-			DB::connection()->getPdo()->sqliteCreateFunction('REGEXP', function ($pattern, $value) {
-				mb_regex_encoding('UTF-8');
-				return (false !== mb_ereg($pattern, $value)) ? 1 : 0;
-			});
-
-			*/
-
 			$user = App::user()->roles;
 			$values = implode('|', (array)$user);
 

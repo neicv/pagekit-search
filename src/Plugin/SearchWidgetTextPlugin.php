@@ -105,20 +105,17 @@ class SearchWidgetTextPlugin implements EventSubscriberInterface
 		$text = stripslashes($text); 
 		$text = htmlspecialchars($text); 
 
-		
-
 		$matches = array();
 		switch ($phrase)
 		{
 			case 'exact':
-				$text2 = json_encode(str_split($text), JSON_UNESCAPED_UNICODE);
+				$text = str_replace('"', "", json_encode($text));
+				$text =App::db()->quote($text);
+				$text = str_replace("'", "", $text);
 				$text =App::db()->quote('%' . $text . '%', false);
-				$text2 =App::db()->quote('%' . $text2 . '%', false);
 				$wheres2 = array();
 				$wheres2[] = 'a.title LIKE '.$text;
 				$wheres2[] = 'a.data LIKE '. $text;
-				$wheres2[] = 'a.title LIKE '.$text2;
-				$wheres2[] = 'a.data LIKE '. $text2;
 				$where = '(' . implode(') OR (', $wheres2) . ')';
 				break;
 

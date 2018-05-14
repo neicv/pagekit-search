@@ -3,6 +3,7 @@
 ### Fixed
 
 - Fixed Markdown options (now this is inherited from the component)
+- Fixed error in search PagePlugin, when use MySQL and apply markdown options
 
 ### Added
 
