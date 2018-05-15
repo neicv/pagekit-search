@@ -266,7 +266,7 @@ class SearchBlogPlugin implements EventSubscriberInterface
 					$list[$index]->metakey 			= '';
 					$list[$index]->created			= $item['date'];
 					//$list[$index]->text 	 		= App::content()->applyPlugins($item['text'], ['item' => $item, 'markdown' => $markdown]);
-					(int) $post = Post::find($item['id']); 
+					$post = Post::find((int) $item['id']); 
 					$list[$index]->text 	 		= App::content()->applyPlugins($item['text'], ['item' => $item, 'markdown' => $post->get('markdown')]);
 					$list[$index]->section			= __('Blog'); 
 					$list[$index]->catslug 			= '';
