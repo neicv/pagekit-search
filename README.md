@@ -5,13 +5,13 @@ and You can use a Self Search Plugin to search through the database of your Page
 
 It contains "Search Widget".
 
-![image](http://search.friendly-it.ru/storage/searchscreenshot.jpg)
+![image](http://pagekit.friendly-it.ru/storage/img/searchscreenshot.jpg)
 
 ## Installation
 
 Please install Search via the built-in Marketplace in your Pagekit Installation.
 
-![image](http://search.friendly-it.ru/storage/marketplace1.jpg)
+![image](http://pagekit.friendly-it.ru/storage/img/marketplace1.jpg)
 
 The extension and all its dependancies will be installed automatically.
 
