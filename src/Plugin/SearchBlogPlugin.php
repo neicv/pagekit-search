@@ -3,7 +3,7 @@
  * @package     Pagekit Extension
  * @subpackage  Search.content - Blog
  *
- * @copyright   Copyright (C) 2016 Friendly-it, Inc. All rights reserved.
+ * @copyright   Copyright (C) 2016-2018 Friendly-it, Inc. All rights reserved.
  * @license     GNU General Public License version 2 or later; see LICENSE.txt
  */
 
@@ -398,7 +398,6 @@ class SearchBlogPlugin implements EventSubscriberInterface
 						//}
 					}
 				if (!empty($list)){
-					//$rows = array();
 					$rows[] = $list;
 					}
 				}

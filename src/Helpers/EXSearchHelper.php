@@ -551,7 +551,8 @@ class EXSearchHelper
 
 		if (!is_null($search_term)){
 			$SearchKeywords = SearchKeywords::create();
-			$SearchKeywords->ip = ip2long(App::request()->getClientIp());
+			//$SearchKeywords->ip = ip2long(App::request()->getClientIp());
+			$SearchKeywords->ip = EXSearchHelper::dtr_pton_mod(App::request()->getClientIp());
 			//$SearchKeywords->putdate = EXSearchHelper::_date($putdate);
 			$SearchKeywords->putdate = new \DateTime;
 		
@@ -588,5 +589,47 @@ class EXSearchHelper
 		//$text = ereg_replace(" +", " ", $text);
 		$text = str_replace(" +", " ", $text);
 		return $text;
+	}
+
+	
+
+	/**
+	 * dtr_pton
+	 *
+	 * Converts a printable IP into an unpacked binary string
+	 *
+	 * @author Mike Mackintosh - mike@bakeryphp.com
+	 * @param string $ip
+	 * @return string $bin
+	 */
+	function dtr_pton_mod( $ip ){
+	
+		if(filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)){
+			return ip2long($ip); // not yet supported IPV6 in 0.1.7.7 
+			//return current( unpack( "A4", inet_pton( $ip ) ) );
+		}
+		elseif(filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6)){
+			//return current( unpack( "A16", inet_pton( $ip ) ) );
+			return 0; // not yet supported IPV6 in 0.1.7.7 
+		}
+	
+		throw new \Exception("Please supply a valid IPv4 or IPv6 address");
+	}
+
+	/**
+	 * dtr_ntop
+	 *
+	 * Converts an unpacked binary string into a printable IP
+	 *
+	 * @author Mike Mackintosh - mike@bakeryphp.com
+	 * @param string $str
+	 * @return string $ip
+	 */
+	function dtr_ntop( $str ){
+		if( strlen( $str ) == 16 OR strlen( $str ) == 4 ){
+			return inet_ntop( pack( "A".strlen( $str ) , $str ) );
+		}
+	
+		throw new \Exception( "Please provide a 4 or 16 byte string" );
 	}
 }
