@@ -183,6 +183,11 @@ class EXSearchHelper
 				$searchword  = '';
 				$restriction = true;
 			}
+			if ($searchword =='')
+			{
+				$searchword  = '';
+				$restriction = true;
+			}
 		}
 		else {
 			if (strlen($searchword) > $upper_limit)
@@ -192,6 +197,11 @@ class EXSearchHelper
 			}
 			// Searchword must contain a minimum of characters.
 			if ($searchword && strlen($searchword) < $lower_limit)
+			{
+				$searchword  = '';
+				$restriction = true;
+			}
+			if ($searchword =='')
 			{
 				$searchword  = '';
 				$restriction = true;

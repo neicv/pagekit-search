@@ -161,7 +161,7 @@
                     </div>
 
 					<div class="uk-form-row">
-					{{'Here content custom options for the Driven Listings Search Plugin' | trans}}
+					<!--{{'Here content custom options for the Driven Listings Search Plugin' | trans}}-->
 					</div>
 					<hr class="uk-article-divider">
 
