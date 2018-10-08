@@ -1,3 +1,13 @@
+## 0.1.7.8 (September 25, 2018)
+
+### Fixed
+
+- Fixed Empty Search
+
+
+### Added
+
+
 ## 0.1.7.7 (May 15, 2018)
 
 ### Fixed

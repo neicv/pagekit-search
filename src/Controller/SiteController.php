@@ -3,7 +3,7 @@
  * @package     Pagekit Extension
  * @subpackage  Search.content - SiteController
  *
- * @copyright   Copyright (C) 2016 Friendly-it, Inc. All rights reserved.
+ * @copyright   Copyright (C) 2016 - 2018 Friendly-it, Inc. All rights reserved.
  * @license     GNU General Public License version 2 or later; see LICENSE.txt
  */
 namespace Friendlyit\Search\Controller;
@@ -262,7 +262,7 @@ class SiteController
 
 		// Put the filtered results back into the model
 		$this->_keyword = $searchword;
-		
+
 		// Statistics Search
 		if ((!$error) && $this->_enable_log_searches)
 			{
