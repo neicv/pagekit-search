@@ -10,8 +10,9 @@
             <ul class="uk-nav uk-nav-side"
                 data-uk-switcher="{connect:'#search-info-content',swiping:false, active:0}">
                 <li><a href="#">Overview</a></li>
-                <li><a href="#">Important</a></li>
-                <li><a href="#">Search widget</a></li>
+                <li><a href="#"><b>Important</b></a></li>
+                <li><a href="#">Settings</a></li>
+                <li><a href="#">Search Widget</a></li>
                 <li><a href="#">Driven Listings Plugin</a></li>
                 <!-- <li><a href="#">Data Statistic</a></li> -->
                 <li><a href="#">About Search</a></li>
@@ -33,6 +34,10 @@
 
                 <li>
                     <?php include 'important.php'; ?>
+                </li>
+
+                <li>
+                    <?php include 'settings.php'; ?>
                 </li>
 
                 <li>

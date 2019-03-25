@@ -338,10 +338,14 @@ class SiteController
 						}
 					$res_limit  = (int)((!$data['result_per_page']) ? 6 : $data['result_per_page']);
 					$char_limit = (int)((!$data['char_limit']) ? 110 : $data['char_limit']);
+					$class_header = ((!$data['class_header']) ? 'uk-text-bold' : $data['class_header']);
+					$class_text = ((!$data['class_text']) ? '' : $data['class_text']);
 					}
 				else {
 					$res_limit  = 6;	
 					$char_limit = 110;
+					$class_header = 'uk-text-bold';
+					$class_text = '';
 					}
 				
 				//search results
@@ -357,8 +361,8 @@ class SiteController
 
 						// create item
 						$item          = array();
-						$item['title'] = '<div class="uk-text-bold">'. $res->title . '</div>';
-						$item['text']  = substr_replace($text, '...', strrpos($text, ' '));
+						$item['title'] = '<div class="'. $class_header . '">'. $res->title . '</div>';
+						$item['text']  = '<div class="'. $class_text . '">'. substr_replace($text, '...', strrpos($text, ' ')) . '</div>';
 						$item['url']   = $res->href;
 						$res_items[]   = $item;
 						

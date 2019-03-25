@@ -93,7 +93,7 @@
                                 <label>
                                     <input type="checkbox" v-model="config.defaults.show_title" value="title">
                                     {{ 'Show Title' | trans }}
-                                </label>
+                                </label>&nbsp;
                                 <input class="uk-form-small" type="text" v-model="config.defaults.title">
                             </p>
 							<p class="uk-form-controls-condensed">
@@ -109,10 +109,11 @@
                                     <option value="">{{ 'None' | trans }}</option>
                                     <option value="highlight">{{ 'Default' | trans }}</option>
                                     <option value="uk-text-bold uk-text-success">{{ 'Success' | trans }}</option>
-                                    <option value="uk-text-bold uk-text-primary"><class="uk-text-warning">{{ 'Primary' | trans }}</option>
+                                    <option value="uk-text-bold uk-text-primary">{{ 'Primary' | trans }}</option>
                                     <option value="uk-text-bold uk-text-warning">{{ 'Warning' | trans }}</option>
                                     <option value="uk-text-bold uk-text-danger">{{ 'Danger' | trans }}</option>
                                 </select>
+                                &nbsp; css style: {{ config.defaults.highlight }}
                             </p>
                         </div>
                     </div>

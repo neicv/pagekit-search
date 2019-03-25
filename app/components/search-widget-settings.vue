@@ -63,6 +63,19 @@
                 </div>
             </div>
 			
+            <div class="uk-form-row">
+                <label for="form-theme-badge" class="uk-form-label">{{ 'Result Class Header' | trans }}</label>
+                <div class="uk-form-controls">
+                    <input id="form-theme-badge" class="uk-form-width-large" type="text" v-model="widget.data.class_header">
+                </div>
+            </div>
+
+            <div class="uk-form-row">
+                <label for="form-theme-badge" class="uk-form-label">{{ 'Result Class Text' | trans }}</label>
+                <div class="uk-form-controls">
+                    <input id="form-theme-badge" class="uk-form-width-large" type="text" v-model="widget.data.class_text">
+                </div>
+            </div>
 			
 
         </div>
