@@ -1,3 +1,10 @@
+## 0.1.7.9 (May 11, 2019)
+
+### Added
+
+- added plugin support DpnBlog - Advanced Blog (Pastheme/dpnblog) ver. 2.03, 2.07, 2.1.4 support
+    (have limitations: no search on category, tags, slug, comments) 
+
 ## 0.1.7.8 (September 25, 2018)
 
 ### Fixed

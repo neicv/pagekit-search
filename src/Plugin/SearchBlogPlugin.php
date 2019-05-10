@@ -3,7 +3,7 @@
  * @package     Pagekit Extension
  * @subpackage  Search.content - Blog
  *
- * @copyright   Copyright (C) 2016-2018 Friendly-it, Inc. All rights reserved.
+ * @copyright   Copyright (C) 2016-2019 Friendly-it, Inc. All rights reserved.
  * @license     GNU General Public License version 2 or later; see LICENSE.txt
  */
 
@@ -64,7 +64,7 @@ class SearchBlogPlugin implements EventSubscriberInterface
 	}
 	
 	/**
-	 * Search content (articles).
+	 * Search content (Blog).
 	 * The SQL must return the following fields that are used in a common display
 	 * routine: href, title, section, created, text, browsernav.
 	 *

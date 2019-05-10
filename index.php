@@ -1,9 +1,17 @@
 <?php
+/**
+ * @package     Pagekit Extension Search
+ *
+ * @copyright   Copyright (C) 2016-2019 Friendly-it, Inc. All rights reserved.
+ * @license     GNU General Public License version 2 or later; see LICENSE.txt
+ */
+
 //namespace Pagekit\Site;
 use Friendlyit\Search\Plugin\SearchContentPlugin;
 use Friendlyit\Search\Plugin\SearchPagePlugin;
 use Friendlyit\Search\Plugin\SearchWidgetTextPlugin;
 use Friendlyit\Search\Plugin\SearchBlogPlugin;
+use Friendlyit\Search\Plugin\SearchAdvBlogPlugin;
 use Friendlyit\Search\Plugin\SearchDrivenListingsPlugin;
 use Pagekit\Application as App;
 //use Pagekit\Site\Model\Node;
@@ -170,6 +178,21 @@ return [
                 $app->subscribe(
                 new SearchDrivenListingsPlugin
                 );
+            }
+            
+            if (App::module('dpnblog')) {
+
+                $query =  App::db()->createQueryBuilder();
+                $query = $query->from('@system_node');
+                $query->where(['type' => 'dpnblog']);
+                $query->where(['status' => 1] );
+                $count = $query->count();
+
+                if ($count){
+                    $app->subscribe(
+                    new SearchAdvBlogPlugin
+                    );
+                }
 			}
 			
 			$app->subscribe(
