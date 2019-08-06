@@ -336,10 +336,10 @@ class SiteController
 						{
 							$data[$key] = $value;
 						}
-					$res_limit  = (int)((!$data['result_per_page']) ? 6 : $data['result_per_page']);
-					$char_limit = (int)((!$data['char_limit']) ? 110 : $data['char_limit']);
-					$class_header = ((!$data['class_header']) ? 'uk-text-bold' : $data['class_header']);
-					$class_text = ((!$data['class_text']) ? '' : $data['class_text']);
+					$res_limit  	= (int)(!$this->getIfSet($data['result_per_page']) ? 6 : $data['result_per_page']);
+					$char_limit 	= (int)(!$this->getIfSet($data['char_limit']) ? 110 : $data['char_limit']);
+					$class_header 	= !$this->getIfSet($data['class_header']) ? 'uk-text-bold' : $data['class_header'];
+					$class_text 	= !$this->getIfSet($data['class_text']) ? '' : $data['class_text'];
 					}
 				else {
 					$res_limit  = 6;	

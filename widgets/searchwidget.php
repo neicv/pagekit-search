@@ -7,10 +7,12 @@ return [
     'label' => 'Search Widget',
 	
 	'defaults' => [
-        'result_per_page' => 6,
-        'triggering_chars' => 3,
-		'char_limit' => 140,
-		'css_enabled' => false,
+        'result_per_page'   => 6,
+        'triggering_chars'  => 3,
+		'char_limit'        => 140,
+        'css_enabled'       => false,
+        'class_header'      => '',
+        'class_text'        => ''
     ],
 
     'events' => [
@@ -32,9 +34,9 @@ return [
 		$triggering_chars 	= (int)((!$widget->get('triggering_chars')) ? 3 : $widget->get('triggering_chars'));
 		$char_limit			= (int)((!$widget->get('char_limit')) ? 140 : $widget->get('char_limit'));
         $css_enabled		= (int)((!$widget->get('css_enabled')) ? false : $widget->get('css_enabled'));
-        $class_header		= ((!$widget->get('class_header')) ? '' : $widget->get('class_header'));
-        $class_text 		= ((!$widget->get('class_text')) ? '' : $widget->get('class_text'));
-        //return $app['view']('friendlyit/search:views/widget/widget-search.php', compact('widget', 'options', 'result_per_page', 'triggering_chars', 'char_limit', 'css_enabled', 'upper_limit', 'layout'));
+        $class_header		= (!$widget->get('class_header')) ? '' : $widget->get('class_header');
+        $class_text 		= (!$widget->get('class_text')) ? '' : $widget->get('class_text');
+        
 		return $app['view']('friendlyit/search/widget/widget-search.php', compact('widget', 'options', 'result_per_page', 'triggering_chars', 'char_limit', 'css_enabled', 'upper_limit', 'class_header', 'class_text', 'layout'));
     }
 ];
